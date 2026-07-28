@@ -52,18 +52,18 @@
           </div>
           
           <div class="inspection-content">
-            <div class="label-edition">LIBRARY EDITION</div>
-            <h1 id="inspect-title">Boom: Bubbles and the End of Stagnation</h1>
-            <p id="inspect-author">Byrne Hobart and Tobias Huber</p>
+            <div class="label-edition stagger-el">LIBRARY EDITION</div>
+            <h1 id="inspect-title" class="stagger-el">Boom: Bubbles and the End of Stagnation</h1>
+            <p id="inspect-author" class="stagger-el">Byrne Hobart and Tobias Huber</p>
             
-            <p class="inspect-desc">A study of how bubbles assemble capital, talent, urgency, and risk—and why those volatile conditions can unlock transformative innovation.</p>
+            <p class="inspect-desc stagger-el">A study of how bubbles assemble capital, talent, urgency, and risk—and why those volatile conditions can unlock transformative innovation.</p>
             
-            <blockquote class="inspect-quote">
+            <blockquote class="inspect-quote stagger-el">
               "A must-read for those who seek to build the future."
               <cite>MARC ANDREESSEN</cite>
             </blockquote>
             
-            <div class="inspect-meta">
+            <div class="inspect-meta stagger-el">
               <div class="meta-col">
                 <span class="meta-label">FORMAT</span>
                 <span class="meta-val">Hardcover</span>
@@ -74,7 +74,7 @@
               </div>
             </div>
             
-            <button class="view-book-link">VIEW BOOK <span class="arrow">↗</span></button>
+            <button class="view-book-link stagger-el">VIEW BOOK <span class="arrow">↗</span></button>
           </div>
           
           <div class="inspection-footer">
@@ -105,6 +105,37 @@
         </footer>
       </div>
     </div>
+    <!-- Hover Tooltip -->
+    <div id="hover-tooltip" class="hidden"></div>
+    
+    <!-- PDF Reader Overlay -->
+    <div id="pdf-reader-overlay" class="hidden">
+      <div class="pdf-reader-header">
+        <button id="close-pdf-btn">CLOSE</button>
+        <div class="pdf-page-indicator">
+          <span id="pdf-page-current">01</span> &mdash; <span id="pdf-page-total">01</span>
+          <span id="pdf-progress-percent"> (0%)</span>
+        </div>
+      </div>
+      
+      <div class="pdf-reader-content">
+        <button id="pdf-prev-btn" class="pdf-nav-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        
+        <div class="pdf-canvas-container">
+          <div class="pdf-page-wrapper">
+            <canvas id="pdf-render-canvas"></canvas>
+            <div id="pdf-text-layer" class="textLayer"></div>
+          </div>
+        </div>
+        
+        <button id="pdf-next-btn" class="pdf-nav-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
