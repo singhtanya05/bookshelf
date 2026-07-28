@@ -2,6 +2,10 @@ import './style.css';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure pdfjs worker to use CDN to avoid Vite build issues
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 // --- UI Elements ---
 const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
@@ -23,12 +27,36 @@ const inspectTitle = document.querySelector('#inspect-title') as HTMLElement;
 const inspectAuthor = document.querySelector('#inspect-author') as HTMLElement;
 const returnBtn = document.querySelector('#return-button') as HTMLButtonElement;
 const resetViewBtn = document.querySelector('#reset-view-btn') as HTMLButtonElement;
+const viewBookBtn = document.querySelector('.view-book-link') as HTMLButtonElement;
+
+const hoverTooltip = document.querySelector('#hover-tooltip') as HTMLElement;
+
+// PDF UI
+const pdfOverlay = document.getElementById('pdf-reader-overlay') as HTMLElement;
+const pdfPageWrapper = document.querySelector('.pdf-page-wrapper') as HTMLElement;
+const pdfCanvas = document.getElementById('pdf-render-canvas') as HTMLCanvasElement;
+const pdfCtx = pdfCanvas.getContext('2d')!;
+const pdfTextLayer = document.getElementById('pdf-text-layer') as HTMLElement;
+const pdfPageCurrent = document.getElementById('pdf-page-current') as HTMLElement;
+const pdfPageTotal = document.getElementById('pdf-page-total') as HTMLElement;
+const pdfProgressPercent = document.getElementById('pdf-progress-percent') as HTMLElement;
+const pdfPrevBtn = document.getElementById('pdf-prev-btn') as HTMLButtonElement;
+const pdfNextBtn = document.getElementById('pdf-next-btn') as HTMLButtonElement;
+const closePdfBtn = document.getElementById('close-pdf-btn') as HTMLButtonElement;
 
 const scrubberThumb = document.querySelector('#scrubber-thumb') as HTMLElement;
 const scrubberTicks = document.querySelector('.scrubber-ticks') as HTMLElement;
 
 // --- Data ---
-const bookData = [
+interface BookData {
+  title: string;
+  author: string;
+  color: string;
+  pdfUrl?: string;
+}
+
+const bookData: BookData[] = [
+  { title: "Secrets of Divine Love", author: "A. Helwa", color: "#5F4B3C", pdfUrl: "/books/secrets_of_divine_love.pdf" },
   { title: "The Sovereign Individual", author: "James Dale Davidson", color: "#3B4A3F" }, // Dark green
   { title: "The Dream Machine", author: "M. Mitchell Waldrop", color: "#E88D56" }, // Orange
   { title: "The Art of Doing Science", author: "Richard W. Hamming", color: "#C44943" }, // Red
@@ -125,24 +153,46 @@ interface BookMeta {
 }
 const bookMetaMap = new Map<THREE.Group, BookMeta>();
 
-function createSpineTexture(title: string, color: string) {
+function createSpineTexture(title: string, author: string, color: string) {
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 1024;
+  canvas.width = 256;
+  canvas.height = 2048;
   const ctx = canvas.getContext('2d')!;
   
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  ctx.fillStyle = '#ffffff';
-  if (color === '#D1C9BE') ctx.fillStyle = '#2A2A28'; // Dark text for cream book
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const val = (Math.random() - 0.5) * 15;
+    data[i] = Math.max(0, Math.min(255, data[i] + val));
+    data[i+1] = Math.max(0, Math.min(255, data[i+1] + val));
+    data[i+2] = Math.max(0, Math.min(255, data[i+2] + val));
+  }
+  ctx.putImageData(imgData, 0, 0);
   
-  ctx.translate(canvas.width / 2, canvas.height - 100);
+  // Foil accents
+  ctx.fillStyle = '#D4AF37';
+  ctx.fillRect(30, 100, canvas.width - 60, 6);
+  ctx.fillRect(30, 120, canvas.width - 60, 2);
+  ctx.fillRect(30, canvas.height - 120, canvas.width - 60, 2);
+  ctx.fillRect(30, canvas.height - 100, canvas.width - 60, 6);
+  
+  ctx.fillStyle = '#ffffff';
+  if (color === '#D1C9BE') ctx.fillStyle = '#2A2A28';
+  
+  ctx.translate(canvas.width / 2, canvas.height - 200);
   ctx.rotate(-Math.PI / 2);
-  ctx.font = '50px "Playfair Display", serif';
+  
+  ctx.font = 'bold 80px "Playfair Display", serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(title, 0, 0);
+  
+  ctx.font = 'italic 50px "Playfair Display", serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(author, canvas.height - 400, 0);
   
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -153,62 +203,67 @@ function createSpineTexture(title: string, color: string) {
 function createCoverTexture(title: string, author: string, color: string) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
-  canvas.height = 1536; // Approx 1:1.5
+  canvas.height = 1536;
   const ctx = canvas.getContext('2d')!;
   
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Concentric circles design
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const val = (Math.random() - 0.5) * 15;
+    data[i] = Math.max(0, Math.min(255, data[i] + val));
+    data[i+1] = Math.max(0, Math.min(255, data[i+1] + val));
+    data[i+2] = Math.max(0, Math.min(255, data[i+2] + val));
+  }
+  ctx.putImageData(imgData, 0, 0);
+  
+  // Foil accent line
+  ctx.fillStyle = '#D4AF37';
+  ctx.fillRect(80, 50, 4, canvas.height - 100);
+  
   const isDark = color === '#2A2A28' || color === '#3B4A3F' || color === '#2B3B4C' || color === '#54407B';
   ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-  
-  // Custom orange circles for "Boom" to match the sample
-  if (title.includes("Boom")) {
-    ctx.strokeStyle = '#D56E52';
-  }
+  if (title.includes("Boom")) ctx.strokeStyle = '#D56E52';
 
   ctx.lineWidth = 15;
   const centerX = canvas.width / 2;
   const centerY = canvas.height * 0.65;
-  
   for (let r = 50; r < 800; r += 60) {
     ctx.beginPath();
     ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
     ctx.stroke();
   }
   
-  // Typography
   ctx.fillStyle = isDark ? '#ffffff' : '#2A2A28';
-  if (color === '#D1C9BE') ctx.fillStyle = '#2A2A28'; // Cream book
+  if (color === '#D1C9BE') ctx.fillStyle = '#2A2A28';
   
-  // "THE COMPLETE SHELF" header
   ctx.font = '600 30px "Inter", sans-serif';
-  ctx.fillText("THE COMPLETE SHELF", 100, 80);
+  ctx.fillText("THE COMPLETE SHELF", 120, 80);
   
   ctx.font = 'bold 110px "Playfair Display", serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   
-  // Wrap text
   const words = title.split(' ');
   let line = '';
   let y = 180;
   for (let n = 0; n < words.length; n++) {
     const testLine = line + words[n] + ' ';
     const metrics = ctx.measureText(testLine);
-    if (metrics.width > canvas.width - 200 && n > 0) {
-      ctx.fillText(line, 100, y);
+    if (metrics.width > canvas.width - 240 && n > 0) {
+      ctx.fillText(line, 120, y);
       line = words[n] + ' ';
       y += 120;
     } else {
       line = testLine;
     }
   }
-  ctx.fillText(line, 100, y);
+  ctx.fillText(line, 120, y);
   
   ctx.font = 'italic 50px "Playfair Display", serif';
-  ctx.fillText(author, 100, y + 160);
+  ctx.fillText(author, 120, y + 160);
   
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -221,42 +276,49 @@ for (let i = 0; i < bookCount; i++) {
   const data = bookData[i];
   const bGroup = new THREE.Group();
   
-  const bWidth = 0.15 + Math.random() * 0.1;
+  const bWidth = 0.15 + Math.random() * 0.05;
   const bHeight = 1.3 + Math.random() * 0.3;
   const bDepth = 0.9 + Math.random() * 0.1;
   
-  const spineTex = createSpineTexture(data.title, data.color);
+  const spineTex = createSpineTexture(data.title, data.author, data.color);
   const coverTex = createCoverTexture(data.title, data.author, data.color);
   
-  const bMat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.7 });
-  const spineMat = new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.5 });
-  const coverMat = new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.5 });
+  const bMat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.9 });
+  const spineMat = new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.8 });
+  const coverMat = new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.8 });
   
-  // Index 0: right (x+) (front cover when rotated +90 deg around Y)
-  // Index 1: left (x-) (back cover)
-  // Index 2: top (y+)
-  // Index 3: bottom (y-)
-  // Index 4: front (z+) (spine facing out on shelf)
-  // Index 5: back (z-) (pages)
-  const materials = [coverMat, bMat, bMat, bMat, spineMat, bMat];
+  const coverThickness = 0.015;
+  const overhang = 0.015;
   
-  const bGeo = new THREE.BoxGeometry(bWidth, bHeight, bDepth);
-  const bMesh = new THREE.Mesh(bGeo, materials);
-  bMesh.position.y = bHeight / 2;
-  bMesh.castShadow = true;
-  bMesh.receiveShadow = true;
+  const rcGeo = new THREE.BoxGeometry(coverThickness, bHeight + overhang*2, bDepth + overhang);
+  const rcMesh = new THREE.Mesh(rcGeo, [coverMat, bMat, bMat, bMat, bMat, bMat]);
+  rcMesh.position.set(bWidth/2 - coverThickness/2, bHeight/2, overhang/2);
+  rcMesh.castShadow = true; rcMesh.receiveShadow = true;
   
-  // Paper pages detail
-  const pagesGeo = new THREE.BoxGeometry(bWidth * 0.8, bHeight * 0.96, bDepth * 0.96);
+  const lcGeo = new THREE.BoxGeometry(coverThickness, bHeight + overhang*2, bDepth + overhang);
+  const lcMesh = new THREE.Mesh(lcGeo, bMat);
+  lcMesh.position.set(-bWidth/2 + coverThickness/2, bHeight/2, overhang/2);
+  lcMesh.castShadow = true; lcMesh.receiveShadow = true;
+  
+  const spineGeo = new THREE.BoxGeometry(bWidth, bHeight + overhang*2, coverThickness);
+  const spineMeshObj = new THREE.Mesh(spineGeo, [bMat, bMat, bMat, bMat, spineMat, bMat]);
+  spineMeshObj.position.set(0, bHeight/2, bDepth/2 + coverThickness/2);
+  spineMeshObj.castShadow = true; spineMeshObj.receiveShadow = true;
+  
+  const pagesGeo = new THREE.BoxGeometry(bWidth - coverThickness*2, bHeight * 0.98, bDepth - overhang);
   const pagesMat = new THREE.MeshStandardMaterial({ color: '#EBE5D9', roughness: 1.0 });
   const pagesMesh = new THREE.Mesh(pagesGeo, pagesMat);
-  pagesMesh.position.set(-0.01, bHeight / 2, -0.01);
+  pagesMesh.position.set(0, bHeight/2, -overhang/2);
+  pagesMesh.receiveShadow = true;
   
-  bGroup.add(bMesh);
-  bGroup.add(pagesMesh);
+  bGroup.add(rcMesh, lcMesh, spineMeshObj, pagesMesh);
   
   const posX = currentX + bWidth / 2;
-  bGroup.position.set(posX, 0, 0);
+  const posZ = (Math.random() - 0.5) * 0.08; // Organic depth variation
+  const rotZ = (Math.random() - 0.5) * 0.06; // Organic leaning
+  
+  bGroup.position.set(posX, 0, posZ);
+  bGroup.rotation.z = rotZ;
   
   shelfGroup.add(bGroup);
   books.push(bGroup);
@@ -329,13 +391,20 @@ window.addEventListener('mousemove', (e) => {
       if (object) {
         hoveredBook = object as THREE.Group;
         document.body.style.cursor = 'pointer';
-        // Optionally update focus UI to hovered book instead of center book
-        // focusedIndex = bookMetaMap.get(hoveredBook)!.index;
+        
+        // Show Tooltip
+        const data = bookData[bookMetaMap.get(hoveredBook)!.index];
+        hoverTooltip.innerText = `${data.title} — ${data.author}`;
+        hoverTooltip.classList.add('visible');
+        hoverTooltip.style.left = `${e.clientX}px`;
+        hoverTooltip.style.top = `${e.clientY}px`;
       } else {
         document.body.style.cursor = 'default';
+        hoverTooltip.classList.remove('visible');
       }
     } else {
       document.body.style.cursor = 'default';
+      hoverTooltip.classList.remove('visible');
     }
   }
 });
@@ -343,12 +412,14 @@ window.addEventListener('mousemove', (e) => {
 window.addEventListener('mouseup', (e) => {
   isDragging = false;
   if (!isInspectMode && hoveredBook && Math.abs(e.clientX - lastX) < 5) {
+    hoverTooltip.classList.remove('visible');
     inspectBook(hoveredBook);
   }
 });
 window.addEventListener('mouseleave', () => { 
   isDragging = false;
   hoveredBook = null;
+  hoverTooltip.classList.remove('visible');
 });
 
 window.addEventListener('keydown', (e) => {
@@ -368,6 +439,14 @@ navLeft.addEventListener('click', () => {
 navRight.addEventListener('click', () => {
   if (isInspectMode) return;
   scrollTarget = THREE.MathUtils.clamp(scrollTarget + 0.5, 0, maxScroll);
+});
+
+window.addEventListener('keydown', (e) => {
+  if (!pdfOverlay.classList.contains('hidden')) {
+    if (e.key === 'ArrowRight') onNextPage();
+    if (e.key === 'ArrowLeft') onPrevPage();
+    if (e.key === 'Escape') pdfOverlay.classList.add('hidden');
+  }
 });
 
 // --- Inspection ---
@@ -405,13 +484,13 @@ function inspectBook(book: THREE.Group) {
   book.position.copy(worldPos);
   book.quaternion.copy(worldQuat);
   
-  const targetX = window.innerWidth > 800 ? -0.8 : 0;
+  const targetX = window.innerWidth > 800 ? -2.5 : 0;
   
   // Animate camera position and target together to look straight at the book
   gsap.to(camera.position, {
     x: targetX,
     y: 0.75, // Camera at eye level with the book center
-    z: 8,    // Increased distance to prevent cropping
+    z: 10,    // Move camera further back to avoid cropping
     duration: 1,
     ease: "power3.inOut"
   });
@@ -455,15 +534,21 @@ function inspectBook(book: THREE.Group) {
     duration: 1,
     ease: "power2.inOut"
   });
+  
+  // Staggered reveal of text elements
+  gsap.fromTo('.stagger-el', 
+    { y: 20, opacity: 0 }, 
+    { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out', delay: 0.4 }
+  );
 }
 
 resetViewBtn.addEventListener('click', () => {
   if (!activeBook) return;
-  const targetX = window.innerWidth > 800 ? -0.8 : 0;
+  const targetX = window.innerWidth > 800 ? -2.5 : 0;
   gsap.to(camera.position, {
     x: targetX,
     y: 0.75,
-    z: 8,
+    z: 10,
     duration: 0.5,
     ease: "power2.inOut"
   });
@@ -474,6 +559,132 @@ resetViewBtn.addEventListener('click', () => {
     duration: 0.5,
     ease: "power2.inOut"
   });
+});
+
+// --- PDF Reader Logic ---
+let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+let pageNum = 1;
+let pageRendering = false;
+let pageNumPending: number | null = null;
+
+function renderPage(num: number) {
+  pageRendering = true;
+  pdfDoc!.getPage(num).then((page) => {
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+    const dynamicScale = (window.innerHeight * 0.75) / unscaledViewport.height;
+    const viewport = page.getViewport({ scale: dynamicScale });
+    
+    pdfCanvas.height = viewport.height;
+    pdfCanvas.width = viewport.width;
+    
+    // Size text layer to match canvas exactly
+    pdfTextLayer.style.width = `${viewport.width}px`;
+    pdfTextLayer.style.height = `${viewport.height}px`;
+
+    const renderContext: any = {
+      canvasContext: pdfCtx,
+      viewport: viewport
+    };
+    
+    // Clear previous text layer
+    pdfTextLayer.innerHTML = '';
+    
+    const renderTask = page.render(renderContext);
+    renderTask.promise.then(() => {
+      // Render Text Layer
+      const textLayer = new pdfjsLib.TextLayer({
+        textContentSource: page.streamTextContent(),
+        container: pdfTextLayer,
+        viewport: viewport
+      });
+      textLayer.render();
+      
+      pageRendering = false;
+      
+      // Animation complete
+      pdfPageWrapper.classList.remove('fade-out', 'fade-in');
+      
+      if (pageNumPending !== null) {
+        renderPage(pageNumPending);
+        pageNumPending = null;
+      }
+    });
+  });
+
+  pdfPageCurrent.textContent = num.toString().padStart(2, '0');
+  
+  // Progress Calculation
+  const progress = Math.round((num / pdfDoc!.numPages) * 100);
+  pdfProgressPercent.textContent = ` (${progress}%)`;
+  
+  // Update Buttons
+  pdfPrevBtn.disabled = num <= 1;
+  pdfNextBtn.disabled = num >= pdfDoc!.numPages;
+  
+  // Save History
+  if (activeBook) {
+    const data = bookData[bookMetaMap.get(activeBook)!.index];
+    localStorage.setItem(`pdf-history-${data.title}`, num.toString());
+  }
+}
+
+function queueRenderPage(num: number) {
+  pdfPageWrapper.classList.add('fade-out');
+  
+  setTimeout(() => {
+    pdfPageWrapper.classList.remove('fade-out');
+    pdfPageWrapper.classList.add('fade-in');
+    
+    if (pageRendering) {
+      pageNumPending = num;
+    } else {
+      renderPage(num);
+    }
+  }, 250);
+}
+
+function onPrevPage() {
+  if (pageNum <= 1) return;
+  pageNum--;
+  queueRenderPage(pageNum);
+}
+
+function onNextPage() {
+  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+  pageNum++;
+  queueRenderPage(pageNum);
+}
+
+pdfPrevBtn.addEventListener('click', onPrevPage);
+pdfNextBtn.addEventListener('click', onNextPage);
+
+closePdfBtn.addEventListener('click', () => {
+  pdfOverlay.classList.add('hidden');
+});
+
+viewBookBtn.addEventListener('click', () => {
+  if (!activeBook) return;
+  const data = bookData[bookMetaMap.get(activeBook)!.index];
+  
+  if (data.pdfUrl) {
+    pdfOverlay.classList.remove('hidden');
+    pdfjsLib.getDocument({ url: data.pdfUrl }).promise.then((doc) => {
+      pdfDoc = doc;
+      pdfPageTotal.textContent = pdfDoc.numPages.toString().padStart(2, '0');
+      
+      // Load History
+      const savedPage = localStorage.getItem(`pdf-history-${data.title}`);
+      pageNum = savedPage ? parseInt(savedPage, 10) : 1;
+      
+      // Ensure pageNum is valid
+      if (pageNum < 1) pageNum = 1;
+      if (pageNum > pdfDoc.numPages) pageNum = pdfDoc.numPages;
+      
+      renderPage(pageNum);
+    });
+  } else {
+    alert("This physical volume is currently not available for digital reading.");
+  }
 });
 
 returnBtn.addEventListener('click', () => {
@@ -567,6 +778,9 @@ function animate() {
   if (!isInspectMode) {
     currentScroll = THREE.MathUtils.lerp(currentScroll, scrollTarget, 0.08);
     shelfGroup.position.x = -currentScroll - shelfOffset;
+    
+    // Dynamic Lighting - lights shift based on scroll
+    dirLight.position.x = 3 + (currentScroll * 0.1);
     
     // Update Scrubber
     const scrollPercent = currentScroll / maxScroll;

@@ -438,3 +438,205 @@ body {
 }
 
 #reset-view-btn:hover { border-color: var(--color-text); }
+
+/* --- New UI Enhancements --- */
+
+#hover-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: rgba(245, 243, 237, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 6px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+  white-space: nowrap;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  transform: translate(15px, -15px); /* Offset slightly from cursor */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(4px);
+}
+
+#hover-tooltip.visible {
+  opacity: 1;
+}
+
+/* Staggered animation setup for inspect overlay */
+#inspection-overlay .stagger-el {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.view-book-link {
+  position: relative;
+  border: none; /* Remove static bottom border */
+}
+
+.view-book-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.view-book-link:hover::after {
+  width: 100%;
+}
+
+/* --- PDF Reader Overlay --- */
+#pdf-reader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-bg);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(0);
+}
+
+#pdf-reader-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+
+.pdf-reader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 3rem;
+}
+
+#close-pdf-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+#close-pdf-btn:hover {
+  opacity: 0.6;
+}
+
+.pdf-page-indicator {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+.pdf-reader-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem 2rem 2rem;
+  overflow: hidden;
+}
+
+.pdf-nav-btn {
+  background: transparent;
+  border: 1px solid #D3CFC6;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.pdf-nav-btn:hover {
+  border-color: var(--color-text);
+}
+
+.pdf-nav-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  border-color: #D3CFC6;
+}
+
+.pdf-canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 0 2rem;
+}
+
+#pdf-render-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 2px;
+  background: #ffffff; /* Fallback for page background */
+}
+
+.pdf-page-wrapper {
+  position: relative;
+  display: inline-block;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.pdf-page-wrapper.fade-out {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+.pdf-page-wrapper.fade-in {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+#pdf-progress-percent {
+  font-size: 0.9rem;
+  opacity: 0.6;
+  margin-left: 0.5rem;
+}
+
+/* PDF.js Text Layer Base Styles */
+.textLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2; /* Can be invisible, but small opacity helps debugging. Better 0.2 while testing, then transparent */
+  line-height: 1.0;
+}
+
+.textLayer > span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer ::selection {
+  background: rgba(0, 0, 255, 0.3);
+  color: transparent;
+}
+
