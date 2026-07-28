@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mint-threejs-skills": {
+      "source": "mintdotgg/mint-threejs-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mint-threejs-skills/SKILL.md",
+      "computedHash": "13e4598967dd7872662621f627ba554cb65ba1d8b7638f5cc8023b49d1e8be9d"
+    }
+  }
+}

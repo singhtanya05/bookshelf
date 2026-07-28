@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Complete Shelf</title>
+    <!-- Fonts: Playfair Display for serif, Inter for sans-serif -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="canvas"></canvas>
+      
+      <!-- UI Overlay -->
+      <div id="ui-layer">
+        <!-- Header -->
+        <header class="header">
+          <div class="header-left">
+            <span class="title-main">THE COMPLETE SHELF</span>
+            <span class="separator">—</span>
+            <span class="title-sub">AN INTERACTIVE 3D LIBRARY</span>
+          </div>
+          <div class="header-right">
+            <div class="stats-text">
+              <span>19 VOLUMES</span>
+              <span>01 CONTINUOUS SHELF</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Status indicator -->
+        <div class="status-indicator">
+          <span class="dot"></span> 19 VOLUMES READY
+        </div>
+
+        <!-- Center Focus Overlay (Appears when a book is centered) -->
+        <div id="focus-overlay" class="hidden">
+          <div class="focus-index"><span id="focus-current">12</span> <span class="focus-total">— 19</span></div>
+          <h1 id="focus-title">Boom</h1>
+          <p id="focus-author">Byrne Hobart and Tobias Huber</p>
+          <button id="inspect-button">INSPECT VOLUME <span class="arrow">↗</span></button>
+        </div>
+
+        <!-- Right Inspection Overlay (Appears during inspection) -->
+        <div id="inspection-overlay" class="hidden">
+          <div class="inspection-header">
+            <button id="return-button">← RETURN TO SHELF</button>
+            <div class="inspection-index"><span id="inspect-current">12</span> <span class="inspect-total">— 19</span></div>
+          </div>
+          
+          <div class="inspection-content">
+            <div class="label-edition">LIBRARY EDITION</div>
+            <h1 id="inspect-title">Boom: Bubbles and the End of Stagnation</h1>
+            <p id="inspect-author">Byrne Hobart and Tobias Huber</p>
+            
+            <p class="inspect-desc">A study of how bubbles assemble capital, talent, urgency, and risk—and why those volatile conditions can unlock transformative innovation.</p>
+            
+            <blockquote class="inspect-quote">
+              "A must-read for those who seek to build the future."
+              <cite>MARC ANDREESSEN</cite>
+            </blockquote>
+            
+            <div class="inspect-meta">
+              <div class="meta-col">
+                <span class="meta-label">FORMAT</span>
+                <span class="meta-val">Hardcover</span>
+              </div>
+              <div class="meta-col">
+                <span class="meta-label">AVAILABILITY</span>
+                <span class="meta-val">Available now</span>
+              </div>
+            </div>
+            
+            <button class="view-book-link">VIEW BOOK <span class="arrow">↗</span></button>
+          </div>
+          
+          <div class="inspection-footer">
+            <div class="control-hints">
+              <span class="control-hint">DRAG TO ORBIT</span>
+              <span class="control-hint">&middot; PINCH OR SCROLL TO ZOOM</span>
+            </div>
+            <button id="reset-view-btn">RESET VIEW</button>
+          </div>
+        </div>
+
+        <!-- Navigation Arrows -->
+        <button id="nav-left" class="nav-arrow">←</button>
+        <button id="nav-right" class="nav-arrow">→</button>
+
+        <!-- Footer / Scrubber -->
+        <footer class="footer">
+          <div class="scrubber">
+            <div class="scrubber-track"></div>
+            <div class="scrubber-ticks">
+              <!-- JS will populate ticks -->
+            </div>
+            <div id="scrubber-thumb" class="scrubber-thumb"></div>
+          </div>
+          <div class="controls-hint">
+            DRAG &middot; SCROLL &middot; ARROW KEYS
+          </div>
+        </footer>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
