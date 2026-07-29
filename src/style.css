@@ -66,7 +66,104 @@ body {
 .title-sub { color: var(--color-text-muted); }
 .separator { color: #D3CFC6; }
 
-.header-right .stats-text {
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1.5rem;
+  pointer-events: auto; /* Allow interactions with search */
+}
+
+/* Search UI */
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#search-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text);
+  width: 150px;
+  transition: width 0.3s ease, border-color 0.3s ease;
+  outline: none;
+  text-transform: uppercase;
+}
+
+#search-input:focus {
+  width: 200px;
+  border-bottom: 1px solid var(--color-text);
+}
+
+#search-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+#search-results {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 250px;
+  background: rgba(245, 243, 237, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#search-results.hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.search-result-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.search-item-title {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-item-author {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.stats-text {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
