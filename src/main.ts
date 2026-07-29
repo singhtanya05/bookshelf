@@ -1300,4 +1300,18 @@ function updateFocusUI(index: number) {
   focusAuthor.innerText = data.author;
 }
 
+// Mobile tap-to-turn pages inside readers
+document.getElementById('epub-tap-left')?.addEventListener('click', () => {
+  if (currentRendition) currentRendition.prev();
+});
+document.getElementById('epub-tap-right')?.addEventListener('click', () => {
+  if (currentRendition) currentRendition.next();
+});
+document.getElementById('pdf-tap-left')?.addEventListener('click', () => {
+  onPrevPage();
+});
+document.getElementById('pdf-tap-right')?.addEventListener('click', () => {
+  onNextPage();
+});
+
 animate();
