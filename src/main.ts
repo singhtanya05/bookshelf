@@ -43,6 +43,10 @@ const closePdfBtn = document.getElementById('close-pdf-btn') as HTMLButtonElemen
 const scrubberThumb = document.querySelector('#scrubber-thumb') as HTMLElement;
 const scrubberTicks = document.querySelector('.scrubber-ticks') as HTMLElement;
 
+// Search UI
+const searchInput = document.getElementById('search-input') as HTMLInputElement;
+const searchResults = document.getElementById('search-results') as HTMLElement;
+
 // --- Data ---
 interface BookData {
   title: string;
@@ -642,6 +646,64 @@ pdfNextBtn.addEventListener('click', onNextPage);
 
 closePdfBtn.addEventListener('click', () => {
   pdfOverlay.classList.add('hidden');
+});
+
+// --- Search Logic ---
+searchInput.addEventListener('input', (e) => {
+  const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
+  
+  if (query.length === 0) {
+    searchResults.classList.add('hidden');
+    return;
+  }
+  
+  searchResults.innerHTML = '';
+  let matchCount = 0;
+  
+  for (let i = 0; i < bookCount; i++) {
+    const data = bookData[i];
+    if (data.title.toLowerCase().includes(query) || data.author.toLowerCase().includes(query)) {
+      matchCount++;
+      const item = document.createElement('div');
+      item.className = 'search-result-item';
+      item.innerHTML = `
+        <div class="search-item-title">${data.title}</div>
+        <div class="search-item-author">${data.author}</div>
+      `;
+      
+      item.addEventListener('click', () => {
+        searchInput.value = '';
+        searchResults.classList.add('hidden');
+        
+        // 1. Scroll shelf to book
+        const book = books[i];
+        const meta = bookMetaMap.get(book)!;
+        scrollTarget = meta.centerPosX;
+        
+        // 2. Trigger inspect after scroll animation finishes
+        setTimeout(() => {
+          if (!isInspectMode) {
+            inspectBook(book);
+          }
+        }, 800);
+      });
+      
+      searchResults.appendChild(item);
+    }
+  }
+  
+  if (matchCount > 0) {
+    searchResults.classList.remove('hidden');
+  } else {
+    searchResults.classList.add('hidden');
+  }
+});
+
+// Close search if clicked outside
+document.addEventListener('click', (e) => {
+  if (!searchInput.contains(e.target as Node) && !searchResults.contains(e.target as Node)) {
+    searchResults.classList.add('hidden');
+  }
 });
 
 viewBookBtn.addEventListener('click', () => {
