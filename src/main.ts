@@ -528,14 +528,14 @@ window.addEventListener('wheel', (e) => {
   scrollTarget = THREE.MathUtils.clamp(scrollTarget, 0, maxScroll);
 });
 
-window.addEventListener('mousedown', (e) => {
+window.addEventListener('pointerdown', (e) => {
   if (isInspectMode) return;
   if (e.target !== canvas) return; // Only drag on canvas
   isDragging = true;
   lastX = e.clientX;
 });
 
-window.addEventListener('mousemove', (e) => {
+window.addEventListener('pointermove', (e) => {
   if (isDragging && !isInspectMode) {
     const delta = e.clientX - lastX;
     scrollTarget -= delta * 0.01;
@@ -584,14 +584,19 @@ window.addEventListener('mousemove', (e) => {
   }
 });
 
-window.addEventListener('mouseup', (e) => {
+window.addEventListener('pointerup', (e) => {
   isDragging = false;
   if (!isInspectMode && hoveredBook && Math.abs(e.clientX - lastX) < 5) {
     hoverTooltip.classList.remove('visible');
     inspectBook(hoveredBook);
   }
 });
-window.addEventListener('mouseleave', () => { 
+window.addEventListener('pointercancel', () => { 
+  isDragging = false;
+  hoveredBook = null;
+  hoverTooltip.classList.remove('visible');
+});
+window.addEventListener('pointerleave', () => { 
   isDragging = false;
   hoveredBook = null;
   hoverTooltip.classList.remove('visible');
