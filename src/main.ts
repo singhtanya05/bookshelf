@@ -992,35 +992,38 @@ function loadEpub(url: string, startCfi?: string) {
     epubViewer.classList.remove('spread-mode');
   }
 
-  // Register Themes
+  // Register Themes with !important and html overrides to force page backgrounds
   currentRendition.themes.register('light', {
-    body: { 'color': '#2A2A28', 'background': '#fff', 'line-height': '1.8' },
-    p: { 'color': '#2A2A28', 'margin-bottom': '1.5em' },
-    span: { 'color': '#2A2A28' },
-    div: { 'color': '#2A2A28' },
-    h1: { 'color': '#2A2A28' },
-    h2: { 'color': '#2A2A28' },
-    h3: { 'color': '#2A2A28' }
+    html: { 'background-color': '#fff !important' },
+    body: { 'color': '#2A2A28 !important', 'background-color': '#fff !important', 'line-height': '1.8' },
+    p: { 'color': '#2A2A28 !important', 'margin-bottom': '1.5em' },
+    span: { 'color': '#2A2A28 !important' },
+    div: { 'color': '#2A2A28 !important' },
+    h1: { 'color': '#2A2A28 !important' },
+    h2: { 'color': '#2A2A28 !important' },
+    h3: { 'color': '#2A2A28 !important' }
   });
   
   currentRendition.themes.register('sepia', {
-    body: { 'color': '#5b4636', 'background': '#f4ecd8', 'line-height': '1.8' },
-    p: { 'color': '#5b4636', 'margin-bottom': '1.5em' },
-    span: { 'color': '#5b4636' },
-    div: { 'color': '#5b4636' },
-    h1: { 'color': '#5b4636' },
-    h2: { 'color': '#5b4636' },
-    h3: { 'color': '#5b4636' }
+    html: { 'background-color': '#f4ecd8 !important' },
+    body: { 'color': '#5b4636 !important', 'background-color': '#f4ecd8 !important', 'line-height': '1.8' },
+    p: { 'color': '#5b4636 !important', 'margin-bottom': '1.5em' },
+    span: { 'color': '#5b4636 !important' },
+    div: { 'color': '#5b4636 !important' },
+    h1: { 'color': '#5b4636 !important' },
+    h2: { 'color': '#5b4636 !important' },
+    h3: { 'color': '#5b4636 !important' }
   });
   
   currentRendition.themes.register('dark', {
-    body: { 'color': '#e0e0e0', 'background': '#1a1a1a', 'line-height': '1.8' },
-    p: { 'color': '#e0e0e0', 'margin-bottom': '1.5em' },
-    span: { 'color': '#e0e0e0' },
-    div: { 'color': '#e0e0e0' },
-    h1: { 'color': '#ffffff' },
-    h2: { 'color': '#ffffff' },
-    h3: { 'color': '#ffffff' }
+    html: { 'background-color': '#1a1a1a !important' },
+    body: { 'color': '#e0e0e0 !important', 'background-color': '#1a1a1a !important', 'line-height': '1.8' },
+    p: { 'color': '#e0e0e0 !important', 'margin-bottom': '1.5em' },
+    span: { 'color': '#e0e0e0 !important' },
+    div: { 'color': '#e0e0e0 !important' },
+    h1: { 'color': '#ffffff !important' },
+    h2: { 'color': '#ffffff !important' },
+    h3: { 'color': '#ffffff !important' }
   });
 
   // Remember active theme
