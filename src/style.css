@@ -938,3 +938,68 @@ body.dark-theme .setting-row select {
   100% { transform: translateX(0); opacity: 1; }
 }
 
+
+#category-filters-container {
+  position: absolute;
+  bottom: 2rem;
+  left: 0;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  z-index: 50; /* below EPUB overlay */
+  pointer-events: none;
+}
+
+#category-filters {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--theme-bg, rgba(253, 251, 247, 0.8));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 30px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  pointer-events: auto;
+  transition: opacity 0.5s ease;
+}
+
+body.dark-theme #category-filters {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.category-btn {
+  background: transparent;
+  border: none;
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--theme-text, #2A2A28);
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.category-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+body.dark-theme .category-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.category-btn.active {
+  background: var(--theme-text, #2A2A28);
+  color: var(--theme-bg, #FDFBF7);
+}
+
+body.dark-theme .category-btn.active {
+  background: var(--theme-text, #e0e0e0);
+  color: var(--theme-bg, #1a1a1a);
+}
+
+#category-filters.hidden {
+  opacity: 0;
+  pointer-events: none;
+}

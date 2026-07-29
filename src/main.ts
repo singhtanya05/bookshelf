@@ -70,6 +70,7 @@ interface BookData {
   title: string;
   author: string;
   color: string;
+  category?: string;
   pdfUrl?: string;
   epubUrl?: string;
 }
@@ -384,7 +385,7 @@ for (let i = 0; i < bookCount; i++) {
 }
 
 // Center the entire shelf visually based on scroll
-const maxScroll = currentX - totalWidths[bookCount - 1] / 2;
+let maxScroll = currentX - totalWidths[bookCount - 1] / 2;
 const shelfOffset = window.innerWidth < 800 ? 0 : -2; // Offset center for left UI
 
 // --- Interaction State ---
@@ -398,6 +399,76 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(-10, -10); // Start off-screen
 
 // --- Browsing Interaction ---
+
+// Category Filtering
+const categoryFiltersContainer = document.getElementById('category-filters')!;
+const uniqueCategories = ['All', ...new Set(bookData.map(b => b.category || 'Uncategorized'))];
+let activeCategory = 'All';
+
+function filterBooks(category: string) {
+  let cx = 0;
+  let lastW = 0;
+  
+  for (let i = 0; i < bookCount; i++) {
+    const book = books[i];
+    const data = bookData[bookMetaMap.get(book)!.index];
+    const match = category === 'All' || (data.category || 'Uncategorized') === category;
+    const meta = bookMetaMap.get(book)!;
+    
+    if (match) {
+      const bWidth = totalWidths[i];
+      const targetX = cx + bWidth / 2;
+      
+      gsap.to(book.position, {
+        x: targetX,
+        y: 0,
+        z: meta.originalPosition.z,
+        duration: 0.8,
+        ease: "power2.out"
+      });
+      
+      // Keep track of new position for scroll focusing
+      meta.centerPosX = targetX;
+      
+      cx += bWidth + bookMargin;
+      lastW = bWidth;
+    } else {
+      // Sink and hide
+      gsap.to(book.position, {
+        y: -2,
+        z: -0.5,
+        duration: 0.8,
+        ease: "power2.inOut"
+      });
+    }
+  }
+  
+  if (cx > 0) {
+    maxScroll = cx - bookMargin - lastW / 2;
+  } else {
+    maxScroll = 0;
+  }
+  
+  // Constrain scroll Target
+  scrollTarget = Math.max(0, Math.min(scrollTarget, maxScroll));
+}
+
+uniqueCategories.forEach(cat => {
+  if (!cat) return;
+  const btn = document.createElement('button');
+  btn.className = 'category-btn';
+  btn.innerText = cat;
+  if (cat === 'All') btn.classList.add('active');
+  
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCategory = cat;
+    filterBooks(activeCategory);
+  });
+  
+  categoryFiltersContainer.appendChild(btn);
+});
 let isDragging = false;
 let lastX = 0;
 
@@ -536,6 +607,7 @@ function inspectBook(book: THREE.Group) {
   footer.style.opacity = '0';
   navLeft.style.opacity = '0';
   navRight.style.opacity = '0';
+  categoryFiltersContainer.style.opacity = '0';
   
   const data = bookData[bookMetaMap.get(book)!.index];
   focusTitle.innerText = data.title;
@@ -1069,6 +1141,7 @@ returnBtn.addEventListener('click', () => {
       footer.style.opacity = '1';
       navLeft.style.opacity = '1';
       navRight.style.opacity = '1';
+      categoryFiltersContainer.style.opacity = '1';
     }
   });
   
