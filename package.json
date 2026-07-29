@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node sync-books.mjs && vite",
+    "dev": "node --watch-path=./bookspdf sync-books.mjs & vite",
     "build": "node sync-books.mjs && tsc && vite build",
     "preview": "vite preview"
   },
