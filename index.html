@@ -134,6 +134,39 @@
       </div>
     </div>
     
+    <!-- EPUB Reader Overlay -->
+    <div id="epub-overlay" class="hidden">
+      <div class="epub-toolbar">
+        <div class="toolbar-left">
+          <button id="close-epub-btn" class="close-reader-btn">
+            <span>&times;</span>
+            CLOSE
+          </button>
+        </div>
+        
+        <div class="toolbar-center">
+          <button id="epub-prev-btn" class="epub-nav-btn">← PREV</button>
+          <div id="epub-progress"></div>
+          <button id="epub-next-btn" class="epub-nav-btn">NEXT →</button>
+        </div>
+        
+        <div class="toolbar-right">
+          <button id="epub-layout-btn" class="epub-nav-btn" title="Toggle Layout">
+            <span class="icon">📖</span>
+          </button>
+          <div class="theme-switcher">
+            <button class="theme-btn theme-light" data-theme="light" title="Light Theme"></button>
+            <button class="theme-btn theme-sepia" data-theme="sepia" title="Sepia Theme"></button>
+            <button class="theme-btn theme-dark" data-theme="dark" title="Dark Theme"></button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="epub-content-wrapper">
+        <div id="epub-viewer"></div>
+      </div>
+    </div>
+    
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
