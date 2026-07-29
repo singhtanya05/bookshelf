@@ -205,6 +205,16 @@ body {
   transition: opacity 0.5s ease, transform 0.5s ease;
   opacity: 1;
   pointer-events: none; /* Let clicks pass through to canvas */
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+#focus-overlay::-webkit-scrollbar {
+  display: none;
+}
+
+#focus-overlay > * {
+  pointer-events: auto; /* Capture wheel events to allow scrolling */
 }
 
 #focus-overlay.hidden {
