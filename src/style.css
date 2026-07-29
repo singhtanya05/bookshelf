@@ -1278,14 +1278,14 @@ body.dark-theme .category-btn.active {
   }
 
   .reader-tap-zone {
-    display: block;
+    display: block !important;
     position: absolute;
     top: 60px; /* Below toolbar */
     bottom: 0;
-    width: 30%;
+    width: 35%; /* Expand to 35% for easier tapping */
     z-index: 100; /* Float over iframe/canvas */
     cursor: pointer;
-    background: transparent;
+    background: rgba(0, 0, 0, 0); /* Invisible solid background to reliably capture mobile taps */
     -webkit-tap-highlight-color: transparent;
   }
 
