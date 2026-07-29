@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as pdfjsLib from 'pdfjs-dist';
+import ePub from 'epubjs';
 
 // Configure pdfjs worker to use CDN to avoid Vite build issues
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -47,15 +48,27 @@ const scrubberTicks = document.querySelector('.scrubber-ticks') as HTMLElement;
 const searchInput = document.getElementById('search-input') as HTMLInputElement;
 const searchResults = document.getElementById('search-results') as HTMLElement;
 
+// EPUB Elements
+const epubOverlay = document.getElementById('epub-overlay') as HTMLElement;
+const epubViewer = document.getElementById('epub-viewer') as HTMLElement;
+const closeEpubBtn = document.getElementById('close-epub-btn') as HTMLElement;
+const epubPrevBtn = document.getElementById('epub-prev-btn') as HTMLElement;
+const epubNextBtn = document.getElementById('epub-next-btn') as HTMLElement;
+const epubProgress = document.getElementById('epub-progress') as HTMLElement;
+const epubLayoutBtn = document.getElementById('epub-layout-btn') as HTMLElement;
+const themeBtns = document.querySelectorAll('.theme-btn');
+
 // --- Data ---
 interface BookData {
   title: string;
   author: string;
   color: string;
   pdfUrl?: string;
+  epubUrl?: string;
 }
 
 const bookData: BookData[] = [
+  { title: "The Hard Thing About Hard Things", author: "Ben Horowitz", color: "#2B2B2B", epubUrl: "/books/the_hard_thing.epub" },
   { title: "Secrets of Divine Love", author: "A. Helwa", color: "#5F4B3C", pdfUrl: "/books/secrets_of_divine_love.pdf" },
   { title: "The Sovereign Individual", author: "James Dale Davidson", color: "#3B4A3F" }, // Dark green
   { title: "The Dream Machine", author: "M. Mitchell Waldrop", color: "#E88D56" }, // Orange
@@ -460,6 +473,21 @@ navRight.addEventListener('click', () => {
 });
 
 window.addEventListener('keydown', (e) => {
+  // EPUB keyboard navigation
+  if (!epubOverlay.classList.contains('hidden')) {
+    if (e.key === 'ArrowRight') animateEpubTurn('next');
+    if (e.key === 'ArrowLeft') animateEpubTurn('prev');
+    if (e.key === 'Escape') {
+      epubOverlay.classList.add('hidden');
+      if (currentBook) {
+        currentBook.destroy();
+        currentBook = null;
+        currentRendition = null;
+      }
+    }
+  }
+  
+  // PDF keyboard navigation
   if (!pdfOverlay.classList.contains('hidden')) {
     if (e.key === 'ArrowRight') onNextPage();
     if (e.key === 'ArrowLeft') onPrevPage();
@@ -710,7 +738,10 @@ viewBookBtn.addEventListener('click', () => {
   if (!activeBook) return;
   const data = bookData[bookMetaMap.get(activeBook)!.index];
   
-  if (data.pdfUrl) {
+  if (data.epubUrl) {
+    epubOverlay.classList.remove('hidden');
+    loadEpub(data.epubUrl);
+  } else if (data.pdfUrl) {
     pdfOverlay.classList.remove('hidden');
     pdfjsLib.getDocument({ url: data.pdfUrl }).promise.then((doc) => {
       pdfDoc = doc;
@@ -728,6 +759,171 @@ viewBookBtn.addEventListener('click', () => {
     });
   } else {
     alert("This physical volume is currently not available for digital reading.");
+  }
+});
+
+// --- EPUB Logic ---
+let currentBook: any = null;
+let currentRendition: any = null;
+let epubSpread: 'none' | 'auto' = (localStorage.getItem('epub-spread') as 'none' | 'auto') || 'auto';
+
+function loadEpub(url: string, startCfi?: string) {
+  if (currentBook) {
+    currentBook.destroy();
+  }
+  epubViewer.innerHTML = ''; // clear
+  currentBook = ePub(url);
+  currentRendition = currentBook.renderTo(epubViewer, {
+    width: "100%",
+    height: "100%",
+    spread: epubSpread,
+    manager: "continuous",
+    flow: "paginated"
+  });
+
+  // Register Themes
+  currentRendition.themes.register('light', {
+    body: { 'font-family': '"Playfair Display", serif', 'color': '#2A2A28', 'background': '#fff', 'line-height': '1.8' },
+    p: { 'font-size': '1.1rem', 'margin-bottom': '1.5em' }
+  });
+  
+  currentRendition.themes.register('sepia', {
+    body: { 'font-family': '"Playfair Display", serif', 'color': '#5b4636', 'background': '#f4ecd8', 'line-height': '1.8' },
+    p: { 'font-size': '1.1rem', 'margin-bottom': '1.5em' }
+  });
+  
+  currentRendition.themes.register('dark', {
+    body: { 'font-family': '"Playfair Display", serif', 'color': '#e0e0e0', 'background': '#1a1a1a', 'line-height': '1.8' },
+    p: { 'font-size': '1.1rem', 'margin-bottom': '1.5em' }
+  });
+
+  // Remember active theme
+  const savedTheme = localStorage.getItem('epub-theme');
+  const activeThemeBtn = Array.from(themeBtns).find(btn => btn.classList.contains('active'));
+  let activeTheme = 'light';
+  
+  if (activeThemeBtn) {
+    activeTheme = activeThemeBtn.getAttribute('data-theme') || 'light';
+  } else if (savedTheme) {
+    activeTheme = savedTheme;
+  }
+  
+  applyTheme(activeTheme);
+
+  // Load history if no startCfi provided
+  const data = bookData[bookMetaMap.get(activeBook!)!.index];
+  let targetCfi = startCfi;
+  if (!targetCfi) {
+    const savedCfi = localStorage.getItem(`epub-history-${data.title}`);
+    if (savedCfi) targetCfi = savedCfi;
+  }
+
+  if (targetCfi) {
+    currentRendition.display(targetCfi);
+  } else {
+    currentRendition.display();
+  }
+
+  currentBook.ready.then(() => {
+    return currentBook.locations.generate(1600);
+  }).then(() => {
+    // initial progress update once locations are generated
+    const currentLocation = currentRendition.currentLocation();
+    if (currentLocation) {
+      epubProgress.innerText = Math.round(currentLocation.start.percentage * 100) + '%';
+    }
+  });
+
+  currentRendition.on('relocated', (location: any) => {
+    if (location) {
+      localStorage.setItem(`epub-history-${data.title}`, location.start.cfi);
+      if (currentBook.locations.length() > 0) {
+        epubProgress.innerText = Math.round(location.start.percentage * 100) + '%';
+      }
+    }
+  });
+}
+
+epubLayoutBtn.addEventListener('click', () => {
+  if (!currentRendition || !activeBook) return;
+  const currentLocation = currentRendition.currentLocation();
+  const cfi = currentLocation ? currentLocation.start.cfi : undefined;
+  
+  epubSpread = epubSpread === 'auto' ? 'none' : 'auto';
+  localStorage.setItem('epub-spread', epubSpread);
+  
+  const data = bookData[bookMetaMap.get(activeBook)!.index];
+  if (data.epubUrl) {
+    loadEpub(data.epubUrl, cfi);
+  }
+});
+
+function applyTheme(themeName: string) {
+  if (!currentRendition) return;
+  currentRendition.themes.select(themeName);
+  
+  // Update CSS Variables for surrounding UI
+  if (themeName === 'light') {
+    document.documentElement.style.setProperty('--theme-bg', '#FDFBF7');
+    document.documentElement.style.setProperty('--theme-reader-bg', '#fff');
+    document.documentElement.style.setProperty('--theme-text', '#2A2A28');
+  } else if (themeName === 'sepia') {
+    document.documentElement.style.setProperty('--theme-bg', '#e8e0cc');
+    document.documentElement.style.setProperty('--theme-reader-bg', '#f4ecd8');
+    document.documentElement.style.setProperty('--theme-text', '#5b4636');
+  } else if (themeName === 'dark') {
+    document.documentElement.style.setProperty('--theme-bg', '#121212');
+    document.documentElement.style.setProperty('--theme-reader-bg', '#1a1a1a');
+    document.documentElement.style.setProperty('--theme-text', '#e0e0e0');
+  }
+  
+  themeBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-theme') === themeName);
+  });
+}
+
+themeBtns.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const target = e.currentTarget as HTMLElement;
+    const theme = target.getAttribute('data-theme');
+    if (theme) {
+      applyTheme(theme);
+      localStorage.setItem('epub-theme', theme);
+    }
+  });
+});
+
+function animateEpubTurn(direction: 'next'|'prev') {
+  if (!currentRendition) return;
+
+  const outClass = direction === 'next' ? 'epub-slide-out-left' : 'epub-slide-out-right';
+  const inClass = direction === 'next' ? 'epub-slide-in-right' : 'epub-slide-in-left';
+
+  // Animate Out
+  epubViewer.classList.add(outClass);
+  
+  setTimeout(() => {
+    if (direction === 'next') currentRendition.next();
+    else currentRendition.prev();
+
+    epubViewer.classList.remove(outClass);
+    epubViewer.classList.add(inClass);
+
+    setTimeout(() => {
+      epubViewer.classList.remove(inClass);
+    }, 500);
+  }, 300); // Wait a bit before actually turning the page so it animates out
+}
+
+epubNextBtn.addEventListener('click', () => animateEpubTurn('next'));
+epubPrevBtn.addEventListener('click', () => animateEpubTurn('prev'));
+
+closeEpubBtn.addEventListener('click', () => {
+  epubOverlay.classList.add('hidden');
+  if (currentBook) {
+    currentBook.destroy();
+    currentBook = null;
+    currentRendition = null;
   }
 });
 
