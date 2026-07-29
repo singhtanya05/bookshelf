@@ -212,12 +212,9 @@ body {
   transform: translateY(20px);
 }
 
-.inspect-actions {
-  display: flex;
-  gap: 2rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  font-weight: 500;
+#inspect-button,
+#return-button,
+.view-book-link {
   pointer-events: auto; /* Buttons need pointer events */
 }
 

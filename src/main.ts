@@ -761,17 +761,27 @@ returnBtn.addEventListener('click', () => {
   
   const meta = bookMetaMap.get(activeBook)!;
   
+  // 1. Save current state
+  const currentWorldPos = new THREE.Vector3();
+  const currentWorldQuat = new THREE.Quaternion();
+  activeBook.getWorldPosition(currentWorldPos);
+  activeBook.getWorldQuaternion(currentWorldQuat);
+  
+  // 2. Calculate target state by temporarily attaching to shelf
   const targetWorldPos = new THREE.Vector3();
   const targetWorldQuat = new THREE.Quaternion();
   
   meta.originalParent.add(activeBook);
   activeBook.position.copy(meta.originalPosition);
   activeBook.rotation.copy(meta.originalRotation);
-  activeBook.updateMatrixWorld();
+  activeBook.updateMatrixWorld(true);
   activeBook.getWorldPosition(targetWorldPos);
   activeBook.getWorldQuaternion(targetWorldQuat);
   
+  // 3. Move back to scene and restore current state to begin animation
   scene.add(activeBook);
+  activeBook.position.copy(currentWorldPos);
+  activeBook.quaternion.copy(currentWorldQuat);
   
   gsap.to(activeBook.position, {
     x: targetWorldPos.x,
