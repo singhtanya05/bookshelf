@@ -38,32 +38,22 @@
 
         <!-- Center Focus Overlay (Appears when a book is centered) -->
         <div id="focus-overlay" class="hidden">
-          <div class="focus-index"><span id="focus-current">12</span> <span class="focus-total">— 19</span></div>
-          <h1 id="focus-title">Boom</h1>
-          <p id="focus-author">Byrne Hobart and Tobias Huber</p>
-          <button id="inspect-button">INSPECT VOLUME <span class="arrow">↗</span></button>
-        </div>
-
-        <!-- Right Inspection Overlay (Appears during inspection) -->
-        <div id="inspection-overlay" class="hidden">
-          <div class="inspection-header">
-            <button id="return-button">← RETURN TO SHELF</button>
-            <div class="inspection-index"><span id="inspect-current">12</span> <span class="inspect-total">— 19</span></div>
-          </div>
+          <div id="focus-index">01 &mdash; 19</div>
           
-          <div class="inspection-content">
-            <div class="label-edition stagger-el">LIBRARY EDITION</div>
-            <h1 id="inspect-title" class="stagger-el">Boom: Bubbles and the End of Stagnation</h1>
-            <p id="inspect-author" class="stagger-el">Byrne Hobart and Tobias Huber</p>
+          <!-- Collapsed Details (Home) -->
+          <h2 id="focus-title">The Sovereign Individual</h2>
+          <div id="focus-author">James Dale Davidson</div>
+          
+          <!-- Expanded Details (Inspection) -->
+          <div id="focus-details" class="hidden">
+            <p class="inspect-desc">A study of how bubbles assemble capital, talent, urgency, and risk—and why those volatile conditions can unlock transformative innovation.</p>
             
-            <p class="inspect-desc stagger-el">A study of how bubbles assemble capital, talent, urgency, and risk—and why those volatile conditions can unlock transformative innovation.</p>
-            
-            <blockquote class="inspect-quote stagger-el">
+            <blockquote class="inspect-quote">
               "A must-read for those who seek to build the future."
               <cite>MARC ANDREESSEN</cite>
             </blockquote>
             
-            <div class="inspect-meta stagger-el">
+            <div class="inspect-meta">
               <div class="meta-col">
                 <span class="meta-label">FORMAT</span>
                 <span class="meta-val">Hardcover</span>
@@ -74,16 +64,20 @@
               </div>
             </div>
             
-            <button class="view-book-link stagger-el">VIEW BOOK <span class="arrow">↗</span></button>
+            <button class="view-book-link">
+              VIEW BOOK
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+            </button>
           </div>
+    
+          <button id="inspect-button">
+            INSPECT VOLUME
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+          </button>
           
-          <div class="inspection-footer">
-            <div class="control-hints">
-              <span class="control-hint">DRAG TO ORBIT</span>
-              <span class="control-hint">&middot; PINCH OR SCROLL TO ZOOM</span>
-            </div>
-            <button id="reset-view-btn">RESET VIEW</button>
-          </div>
+          <button id="return-button" class="hidden">
+            &larr; RETURN TO SHELF
+          </button>
         </div>
 
         <!-- Navigation Arrows -->
@@ -106,7 +100,7 @@
       </div>
     </div>
     <!-- Hover Tooltip -->
-    <div id="hover-tooltip" class="hidden"></div>
+    <div id="hover-tooltip"></div>
     
     <!-- PDF Reader Overlay -->
     <div id="pdf-reader-overlay" class="hidden">
