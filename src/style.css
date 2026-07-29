@@ -103,14 +103,25 @@ body {
   left: 6rem;
   transform: translateY(-50%);
   max-width: 600px;
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  opacity: 1;
+  pointer-events: none; /* Let clicks pass through to canvas */
 }
 
 #focus-overlay.hidden {
   opacity: 0;
   transform: translateY(20px);
-  pointer-events: none;
+}
+
+.inspect-actions {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  font-weight: 500;
+  pointer-events: auto; /* Buttons need pointer events */
 }
 
 #focus-index {
