@@ -52,6 +52,29 @@ function parseFilename(filename) {
   return { title: toTitleCase(title), author: toTitleCase(author) };
 }
 
+function getFilesRecursively(dir, baseDir = dir) {
+  let results = [];
+  const list = fs.readdirSync(dir);
+  for (const file of list) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(getFilesRecursively(fullPath, baseDir));
+    } else {
+      if (file.endsWith('.pdf') || file.endsWith('.epub')) {
+        const relativePath = path.relative(baseDir, fullPath);
+        const parts = relativePath.split(path.sep);
+        let category = "Uncategorized";
+        if (parts.length > 1) {
+          category = parts[0]; // The first folder name is the category
+        }
+        results.push({ fullPath, file, category });
+      }
+    }
+  }
+  return results;
+}
+
 function main() {
   console.log("Scanning bookspdf directory...");
   if (!fs.existsSync(SOURCE_DIR)) {
@@ -63,12 +86,12 @@ function main() {
     fs.mkdirSync(TARGET_DIR, { recursive: true });
   }
 
-  const files = fs.readdirSync(SOURCE_DIR).filter(f => f.endsWith('.pdf') || f.endsWith('.epub'));
+  const filesList = getFilesRecursively(SOURCE_DIR);
   
   const books = [];
 
-  for (const file of files) {
-    const sourcePath = path.join(SOURCE_DIR, file);
+  for (const item of filesList) {
+    const { fullPath: sourcePath, file, category } = item;
     
     // Safely copy to target dir
     // Create a clean filename for URL
@@ -76,7 +99,7 @@ function main() {
     const targetPath = path.join(TARGET_DIR, cleanFile);
     
     if (!fs.existsSync(targetPath)) {
-      console.log(`Copying new book: ${file}`);
+      console.log(`Copying new book: ${file} (Category: ${category})`);
       fs.copyFileSync(sourcePath, targetPath);
     }
     
@@ -89,6 +112,7 @@ function main() {
       title,
       author,
       color,
+      category,
       pdfUrl: isPdf ? `books/${cleanFile}` : undefined,
       epubUrl: !isPdf ? `books/${cleanFile}` : undefined
     });
@@ -96,11 +120,11 @@ function main() {
 
   // Prepend some of the hardcoded defaults just so the shelf isn't empty if bookspdf is empty
   const defaultBooks = [
-    { title: "The Dream Machine", author: "M. Mitchell Waldrop", color: "#E88D56" },
-    { title: "The Art of Doing Science", author: "Richard W. Hamming", color: "#C44943" },
-    { title: "Poor Charlie's Almanack", author: "Peter D. Kaufman", color: "#2B3B4C" },
-    { title: "High Growth Handbook", author: "Elad Gil", color: "#D1C9BE" },
-    { title: "Origins of Efficiency", author: "Brian Potter", color: "#DE8A75" }
+    { title: "The Dream Machine", author: "M. Mitchell Waldrop", color: "#E88D56", category: "History" },
+    { title: "The Art of Doing Science", author: "Richard W. Hamming", color: "#C44943", category: "Science" },
+    { title: "Poor Charlie's Almanack", author: "Peter D. Kaufman", color: "#2B3B4C", category: "Business" },
+    { title: "High Growth Handbook", author: "Elad Gil", color: "#D1C9BE", category: "Business" },
+    { title: "Origins of Efficiency", author: "Brian Potter", color: "#DE8A75", category: "Economics" }
   ];
   
   // Deduplicate default books if they exist in books
