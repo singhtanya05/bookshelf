@@ -56,6 +56,11 @@ const epubPrevBtn = document.getElementById('epub-prev-btn') as HTMLElement;
 const epubNextBtn = document.getElementById('epub-next-btn') as HTMLElement;
 const epubProgress = document.getElementById('epub-progress') as HTMLElement;
 const epubLayoutBtn = document.getElementById('epub-layout-btn') as HTMLElement;
+const textSettingsBtn = document.getElementById('epub-text-settings-btn') as HTMLElement;
+const textSettingsMenu = document.getElementById('text-settings-menu') as HTMLElement;
+const fontSizeDecBtn = document.getElementById('font-size-dec') as HTMLButtonElement;
+const fontSizeIncBtn = document.getElementById('font-size-inc') as HTMLButtonElement;
+const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
 const themeBtns = document.querySelectorAll('.theme-btn');
 
 // --- Data ---
@@ -785,6 +790,38 @@ viewBookBtn.addEventListener('click', () => {
 let currentBook: any = null;
 let currentRendition: any = null;
 let epubSpread: 'none' | 'auto' = (localStorage.getItem('epub-spread') as 'none' | 'auto') || 'auto';
+let epubFontSize = parseInt(localStorage.getItem('epub-font-size') || '110');
+let epubFontFamily = localStorage.getItem('epub-font-family') || 'Georgia, serif';
+
+fontFamilySelect.value = epubFontFamily;
+
+textSettingsBtn.addEventListener('click', () => {
+  textSettingsMenu.classList.toggle('hidden');
+});
+
+document.addEventListener('click', (e) => {
+  if (!textSettingsBtn.contains(e.target as Node) && !textSettingsMenu.contains(e.target as Node)) {
+    textSettingsMenu.classList.add('hidden');
+  }
+});
+
+fontSizeIncBtn.addEventListener('click', () => {
+  epubFontSize = Math.min(250, epubFontSize + 10);
+  localStorage.setItem('epub-font-size', epubFontSize.toString());
+  if (currentRendition) currentRendition.themes.fontSize(`${epubFontSize}%`);
+});
+
+fontSizeDecBtn.addEventListener('click', () => {
+  epubFontSize = Math.max(50, epubFontSize - 10);
+  localStorage.setItem('epub-font-size', epubFontSize.toString());
+  if (currentRendition) currentRendition.themes.fontSize(`${epubFontSize}%`);
+});
+
+fontFamilySelect.addEventListener('change', (e) => {
+  epubFontFamily = (e.target as HTMLSelectElement).value;
+  localStorage.setItem('epub-font-family', epubFontFamily);
+  if (currentRendition) currentRendition.themes.font(epubFontFamily);
+});
 
 function loadEpub(url: string, startCfi?: string) {
   if (currentBook) {
@@ -802,18 +839,18 @@ function loadEpub(url: string, startCfi?: string) {
 
   // Register Themes
   currentRendition.themes.register('light', {
-    body: { 'font-family': '"Playfair Display", serif', 'color': '#2A2A28', 'background': '#fff', 'line-height': '1.8' },
-    p: { 'font-size': '1.1rem', 'margin-bottom': '1.5em' }
+    body: { 'color': '#2A2A28', 'background': '#fff', 'line-height': '1.8' },
+    p: { 'margin-bottom': '1.5em' }
   });
   
   currentRendition.themes.register('sepia', {
-    body: { 'font-family': '"Playfair Display", serif', 'color': '#5b4636', 'background': '#f4ecd8', 'line-height': '1.8' },
-    p: { 'font-size': '1.1rem', 'margin-bottom': '1.5em' }
+    body: { 'color': '#5b4636', 'background': '#f4ecd8', 'line-height': '1.8' },
+    p: { 'margin-bottom': '1.5em' }
   });
   
   currentRendition.themes.register('dark', {
-    body: { 'font-family': '"Playfair Display", serif', 'color': '#e0e0e0', 'background': '#1a1a1a', 'line-height': '1.8' },
-    p: { 'font-size': '1.1rem', 'margin-bottom': '1.5em' }
+    body: { 'color': '#e0e0e0', 'background': '#1a1a1a', 'line-height': '1.8' },
+    p: { 'margin-bottom': '1.5em' }
   });
 
   // Remember active theme
@@ -828,6 +865,10 @@ function loadEpub(url: string, startCfi?: string) {
   }
   
   applyTheme(activeTheme);
+  
+  // Apply Text Settings
+  currentRendition.themes.font(epubFontFamily);
+  currentRendition.themes.fontSize(`${epubFontSize}%`);
 
   // Load history if no startCfi provided
   const data = bookData[bookMetaMap.get(activeBook!)!.index];
