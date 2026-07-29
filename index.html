@@ -151,6 +151,26 @@
         </div>
         
         <div class="toolbar-right">
+          <div class="text-settings-container">
+            <button id="epub-text-settings-btn" class="epub-nav-btn" title="Text Settings">
+              <span class="icon">Aa</span>
+            </button>
+            <div id="text-settings-menu" class="hidden">
+              <div class="setting-row">
+                <span>Size</span>
+                <button id="font-size-dec">A-</button>
+                <button id="font-size-inc">A+</button>
+              </div>
+              <div class="setting-row">
+                <span>Font</span>
+                <select id="font-family-select">
+                  <option value="Georgia, serif">Serif (Georgia)</option>
+                  <option value="Helvetica, Arial, sans-serif">Sans Serif (Helvetica)</option>
+                  <option value="'Courier New', monospace">Monospace</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <button id="epub-layout-btn" class="epub-nav-btn" title="Toggle Layout">
             <span class="icon">📖</span>
           </button>

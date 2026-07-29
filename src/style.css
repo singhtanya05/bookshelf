@@ -698,6 +698,83 @@ body {
   color: transparent;
 }
 
+.text-settings-container {
+  position: relative;
+}
+
+#text-settings-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--theme-bg, #FDFBF7);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 200px;
+  z-index: 200;
+}
+
+body.dark-theme #text-settings-menu {
+  border-color: rgba(255,255,255,0.1);
+}
+
+#text-settings-menu.hidden {
+  display: none;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: var(--theme-text, #2A2A28);
+}
+
+.setting-row button {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  color: var(--theme-text, #2A2A28);
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+body.dark-theme .setting-row button {
+  background: rgba(255,255,255,0.1);
+}
+
+.setting-row button:hover {
+  background: rgba(0,0,0,0.1);
+}
+body.dark-theme .setting-row button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.setting-row select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: var(--theme-bg, #FDFBF7);
+  color: var(--theme-text, #2A2A28);
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+body.dark-theme .setting-row select {
+  border-color: rgba(255,255,255,0.1);
+}
+
 /* EPUB Viewer Overlay */
 #epub-overlay {
   position: fixed;
