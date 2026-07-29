@@ -118,25 +118,8 @@ function main() {
     });
   }
 
-  // Prepend some of the hardcoded defaults just so the shelf isn't empty if bookspdf is empty
-  const defaultBooks = [
-    { title: "The Dream Machine", author: "M. Mitchell Waldrop", color: "#E88D56", category: "History" },
-    { title: "The Art of Doing Science", author: "Richard W. Hamming", color: "#C44943", category: "Science" },
-    { title: "Poor Charlie's Almanack", author: "Peter D. Kaufman", color: "#2B3B4C", category: "Business" },
-    { title: "High Growth Handbook", author: "Elad Gil", color: "#D1C9BE", category: "Business" },
-    { title: "Origins of Efficiency", author: "Brian Potter", color: "#DE8A75", category: "Economics" }
-  ];
-  
-  // Deduplicate default books if they exist in books
-  const finalBooks = [...books];
-  for (const db of defaultBooks) {
-    if (!books.find(b => b.title === db.title)) {
-      finalBooks.push(db);
-    }
-  }
-
-  fs.writeFileSync(OUTPUT_JSON, JSON.stringify(finalBooks, null, 2));
-  console.log(`Successfully synced ${books.length} files. Total library size: ${finalBooks.length}`);
+  fs.writeFileSync(OUTPUT_JSON, JSON.stringify(books, null, 2));
+  console.log(`Successfully synced ${books.length} files. Total library size: ${books.length}`);
 }
 
 main();
