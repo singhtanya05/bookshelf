@@ -59,6 +59,8 @@ const epubLayoutBtn = document.getElementById('epub-layout-btn') as HTMLElement;
 const themeBtns = document.querySelectorAll('.theme-btn');
 
 // --- Data ---
+import bookDataJson from './bookData.json';
+
 interface BookData {
   title: string;
   author: string;
@@ -67,29 +69,7 @@ interface BookData {
   epubUrl?: string;
 }
 
-const bookData: BookData[] = [
-  { title: "The Hard Thing About Hard Things", author: "Ben Horowitz", color: "#2B2B2B", epubUrl: "/books/the_hard_thing.epub" },
-  { title: "Secrets of Divine Love", author: "A. Helwa", color: "#5F4B3C", pdfUrl: "/books/secrets_of_divine_love.pdf" },
-  { title: "The Sovereign Individual", author: "James Dale Davidson", color: "#3B4A3F" }, // Dark green
-  { title: "The Dream Machine", author: "M. Mitchell Waldrop", color: "#E88D56" }, // Orange
-  { title: "The Art of Doing Science", author: "Richard W. Hamming", color: "#C44943" }, // Red
-  { title: "Poor Charlie's Almanack", author: "Peter D. Kaufman", color: "#2B3B4C" }, // Dark blue
-  { title: "High Growth Handbook", author: "Elad Gil", color: "#D1C9BE" }, // Cream
-  { title: "Origins of Efficiency", author: "Brian Potter", color: "#DE8A75" }, // Salmon
-  { title: "Scaling People", author: "Claire Hughes Johnson", color: "#D56E52" }, // Bright orange
-  { title: "The Revolt of the Public", author: "Martin Gurri", color: "#2A2A28" }, // Dark grey
-  { title: "Boom: Bubbles & Stagnation", author: "Byrne Hobart", color: "#2A2A28" }, // Highlighted in sample
-  { title: "Pieces of the Action", author: "Vannevar Bush", color: "#879B75" }, // Olive green
-  { title: "Working in Public", author: "Nadia Eghbal", color: "#2659A5" }, // Blue
-  { title: "Get Together", author: "Bailey Richardson", color: "#E0B739" }, // Yellow
-  { title: "Scientific Freedom", author: "Donald W. Braben", color: "#54407B" }, // Purple
-  { title: "Stubborn Attachments", author: "Tyler Cowen", color: "#4B7A5C" }, // Green
-  { title: "The Psychology of Money", author: "Morgan Housel", color: "#3B4A3F" },
-  { title: "Zero to One", author: "Peter Thiel", color: "#E88D56" },
-  { title: "Thinking in Systems", author: "Donella Meadows", color: "#C44943" },
-  { title: "Range", author: "David Epstein", color: "#2B3B4C" },
-  { title: "Superintelligence", author: "Nick Bostrom", color: "#2A2A28" }
-];
+const bookData: BookData[] = bookDataJson as BookData[];
 const bookCount = bookData.length;
 
 // Setup scrubber ticks
