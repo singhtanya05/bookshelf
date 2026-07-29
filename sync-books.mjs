@@ -89,8 +89,8 @@ function main() {
       title,
       author,
       color,
-      pdfUrl: isPdf ? `/books/${cleanFile}` : undefined,
-      epubUrl: !isPdf ? `/books/${cleanFile}` : undefined
+      pdfUrl: isPdf ? `books/${cleanFile}` : undefined,
+      epubUrl: !isPdf ? `books/${cleanFile}` : undefined
     });
   }
 
