@@ -275,6 +275,33 @@ function createCoverTexture(title: string, author: string, color: string) {
   return texture;
 }
 
+function createPagesTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d')!;
+  
+  ctx.fillStyle = '#EBE5D9';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.fillStyle = '#dcd5c7';
+  for (let i = 0; i < canvas.height; i += 4) {
+    if (Math.random() > 0.3) {
+      ctx.fillRect(0, i, canvas.width, 1.5);
+    }
+  }
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(2, 10);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+const sharedPagesTex = createPagesTexture();
+const sharedPagesMat = new THREE.MeshStandardMaterial({ map: sharedPagesTex, roughness: 1.0 });
+
 const totalWidths: number[] = [];
 for (let i = 0; i < bookCount; i++) {
   const data = bookData[i];
@@ -295,12 +322,12 @@ for (let i = 0; i < bookCount; i++) {
   const overhang = 0.015;
   
   const rcGeo = new THREE.BoxGeometry(coverThickness, bHeight + overhang*2, bDepth + overhang);
-  const rcMesh = new THREE.Mesh(rcGeo, [bMat, bMat, bMat, bMat, coverMat, coverMat]);
+  const rcMesh = new THREE.Mesh(rcGeo, [coverMat, bMat, bMat, bMat, bMat, bMat]); // +X gets coverMat
   rcMesh.position.set(bWidth/2 - coverThickness/2, bHeight/2, overhang/2);
   rcMesh.castShadow = true; rcMesh.receiveShadow = true;
   
   const lcGeo = new THREE.BoxGeometry(coverThickness, bHeight + overhang*2, bDepth + overhang);
-  const lcMesh = new THREE.Mesh(lcGeo, [bMat, bMat, bMat, bMat, coverMat, coverMat]);
+  const lcMesh = new THREE.Mesh(lcGeo, [bMat, coverMat, bMat, bMat, bMat, bMat]); // -X gets coverMat
   lcMesh.position.set(-bWidth/2 + coverThickness/2, bHeight/2, overhang/2);
   lcMesh.castShadow = true; lcMesh.receiveShadow = true;
   
@@ -310,8 +337,7 @@ for (let i = 0; i < bookCount; i++) {
   spineMeshObj.castShadow = true; spineMeshObj.receiveShadow = true;
   
   const pagesGeo = new THREE.BoxGeometry(bWidth - coverThickness*2, bHeight * 0.98, bDepth - overhang);
-  const pagesMat = new THREE.MeshStandardMaterial({ color: '#EBE5D9', roughness: 1.0 });
-  const pagesMesh = new THREE.Mesh(pagesGeo, pagesMat);
+  const pagesMesh = new THREE.Mesh(pagesGeo, sharedPagesMat);
   pagesMesh.position.set(0, bHeight/2, -overhang/2);
   pagesMesh.receiveShadow = true;
   
