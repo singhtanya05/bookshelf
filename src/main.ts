@@ -17,16 +17,12 @@ const navRight = document.querySelector('#nav-right') as HTMLButtonElement;
 const inspectBtn = document.querySelector('#inspect-button') as HTMLButtonElement;
 
 const focusOverlay = document.querySelector('#focus-overlay') as HTMLElement;
-const focusCurrent = document.querySelector('#focus-current') as HTMLElement;
+const focusIndex = document.querySelector('#focus-index') as HTMLElement;
 const focusTitle = document.querySelector('#focus-title') as HTMLElement;
 const focusAuthor = document.querySelector('#focus-author') as HTMLElement;
 
-const inspectOverlay = document.querySelector('#inspection-overlay') as HTMLElement;
-const inspectCurrent = document.querySelector('#inspect-current') as HTMLElement;
-const inspectTitle = document.querySelector('#inspect-title') as HTMLElement;
-const inspectAuthor = document.querySelector('#inspect-author') as HTMLElement;
 const returnBtn = document.querySelector('#return-button') as HTMLButtonElement;
-const resetViewBtn = document.querySelector('#reset-view-btn') as HTMLButtonElement;
+const focusDetails = document.querySelector('#focus-details') as HTMLElement;
 const viewBookBtn = document.querySelector('.view-book-link') as HTMLButtonElement;
 
 const hoverTooltip = document.querySelector('#hover-tooltip') as HTMLElement;
@@ -79,20 +75,23 @@ const bookData: BookData[] = [
 ];
 const bookCount = bookData.length;
 
-// Populate ticks
-for(let i=0; i<10; i++) {
-  const tick = document.createElement('div');
-  tick.className = 'scrubber-tick';
-  scrubberTicks.appendChild(tick);
+// Setup scrubber ticks
+if (scrubberTicks) {
+  scrubberTicks.innerHTML = '';
+  for (let i = 0; i < bookCount; i++) {
+    const tick = document.createElement('div');
+    tick.className = 'scrubber-tick';
+    tick.style.left = `${(i / (bookCount - 1)) * 100}%`;
+    scrubberTicks.appendChild(tick);
+  }
 }
 
 // --- Setup ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#F5F3ED');
 scene.fog = new THREE.Fog('#F5F3ED', 10, 25);
 
 const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 1.2, 7.5);
+camera.position.set(0, 0.5, 5.5);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -103,20 +102,24 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enabled = false;
-controls.target.set(0, 1.2, 0);
+controls.target.set(0, 0.5, 0);
 controls.update();
 
 // --- Lighting ---
 const ambientLight = new THREE.AmbientLight('#ffffff', 0.8);
 scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight('#ffffff', 1.5);
-dirLight.position.set(3, 8, 4);
+const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+dirLight.position.set(5, 5, 5);
 dirLight.castShadow = true;
 dirLight.shadow.mapSize.width = 2048;
 dirLight.shadow.mapSize.height = 2048;
-dirLight.shadow.bias = -0.0001;
 scene.add(dirLight);
+
+// Ancient Lamp Warm Light
+const lampLight = new THREE.PointLight(0xffaa55, 3, 20); // Warm orange/yellow
+lampLight.position.set(-2, 3, 4);
+scene.add(lampLight);
 
 const fillLight = new THREE.DirectionalLight('#F5F3ED', 0.6);
 fillLight.position.set(-5, 2, 5);
@@ -466,14 +469,17 @@ function inspectBook(book: THREE.Group) {
   footer.style.opacity = '0';
   navLeft.style.opacity = '0';
   navRight.style.opacity = '0';
-  focusOverlay.classList.add('hidden');
   
-  // Show Inspection UI
-  inspectOverlay.classList.remove('hidden');
   const data = bookData[bookMetaMap.get(book)!.index];
-  inspectCurrent.innerText = (bookMetaMap.get(book)!.index + 1).toString().padStart(2, '0');
-  inspectTitle.innerText = data.title;
-  inspectAuthor.innerText = data.author;
+  focusTitle.innerText = data.title;
+  focusAuthor.innerText = data.author;
+  
+  focusOverlay.classList.remove('hidden');
+  focusDetails.classList.remove('hidden');
+  returnBtn.classList.remove('hidden');
+  inspectBtn.classList.add('hidden');
+  
+  shelfGroup.visible = false;
   
   const worldPos = new THREE.Vector3();
   const worldQuat = new THREE.Quaternion();
@@ -484,19 +490,21 @@ function inspectBook(book: THREE.Group) {
   book.position.copy(worldPos);
   book.quaternion.copy(worldQuat);
   
-  const targetX = window.innerWidth > 800 ? -2.5 : 0;
+  // Shift the canvas via CSS to center the view in the right panel
+  if (window.innerWidth > 800) {
+    canvas.classList.add('inspect-shift');
+  }
   
-  // Animate camera position and target together to look straight at the book
   gsap.to(camera.position, {
-    x: targetX,
-    y: 0.75, // Camera at eye level with the book center
-    z: 10,    // Move camera further back to avoid cropping
+    x: 0,
+    y: 0.75,
+    z: 10,
     duration: 1,
     ease: "power3.inOut"
   });
   
   gsap.to(controls.target, {
-    x: targetX,
+    x: 0,
     y: 0.75, // Target the center of the book (bMesh is offset by bHeight/2)
     z: 5,
     duration: 1,
@@ -504,22 +512,16 @@ function inspectBook(book: THREE.Group) {
   });
   
   gsap.to(book.position, {
-    x: targetX,
-    y: 0, // Book rests at y=0, its center is at y=~0.75
+    x: 0,
+    y: 0,
     z: 5,
-    duration: 1,
-    ease: "power3.inOut"
-  });
-  
-  gsap.to(book.scale, {
-    x: 1, y: 1, z: 1,
     duration: 1,
     ease: "power3.inOut"
   });
   
   gsap.to(book.rotation, {
     x: 0,
-    y: -Math.PI / 2 + 0.15, // Rotate to show the front cover (Index 0 is X+)
+    y: -Math.PI / 2 + 0.15,
     z: 0,
     duration: 1,
     ease: "power3.inOut",
@@ -527,39 +529,8 @@ function inspectBook(book: THREE.Group) {
       controls.enabled = true;
     }
   });
-  
-  gsap.to(shelfGroup.position, {
-    z: -5,
-    y: -2,
-    duration: 1,
-    ease: "power2.inOut"
-  });
-  
-  // Staggered reveal of text elements
-  gsap.fromTo('.stagger-el', 
-    { y: 20, opacity: 0 }, 
-    { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out', delay: 0.4 }
-  );
 }
 
-resetViewBtn.addEventListener('click', () => {
-  if (!activeBook) return;
-  const targetX = window.innerWidth > 800 ? -2.5 : 0;
-  gsap.to(camera.position, {
-    x: targetX,
-    y: 0.75,
-    z: 10,
-    duration: 0.5,
-    ease: "power2.inOut"
-  });
-  gsap.to(controls.target, {
-    x: targetX,
-    y: 0.75,
-    z: 5,
-    duration: 0.5,
-    ease: "power2.inOut"
-  });
-});
 
 // --- PDF Reader Logic ---
 let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
@@ -690,20 +661,26 @@ viewBookBtn.addEventListener('click', () => {
 returnBtn.addEventListener('click', () => {
   if (!activeBook) return;
   
-  inspectOverlay.classList.add('hidden');
+  shelfGroup.visible = true;
+  canvas.classList.remove('inspect-shift');
+  
+  focusDetails.classList.add('hidden');
+  returnBtn.classList.add('hidden');
+  inspectBtn.classList.remove('hidden');
+  
   controls.enabled = false;
   
   gsap.to(camera.position, {
     x: 0,
-    y: 1.2,
-    z: 7.5,
+    y: 0.5,
+    z: 5.5,
     duration: 1,
     ease: "power3.inOut"
   });
   
   gsap.to(controls.target, {
     x: 0,
-    y: 1.2,
+    y: 0.5,
     z: 0,
     duration: 1,
     ease: "power3.inOut"
@@ -757,7 +734,6 @@ returnBtn.addEventListener('click', () => {
   });
   
   gsap.to(shelfGroup.position, {
-    z: 0,
     y: 0,
     duration: 1,
     ease: "power2.inOut"
@@ -791,7 +767,7 @@ function animate() {
     let closestIndex = 0;
     
     for (const [group, meta] of bookMetaMap.entries()) {
-      const dist = Math.abs(meta.centerPosX - currentScroll - shelfOffset);
+      const dist = Math.abs(meta.centerPosX - currentScroll);
       if (dist < minDistance) {
         minDistance = dist;
         closestIndex = meta.index;
@@ -826,7 +802,11 @@ function animate() {
 function updateFocusUI(index: number) {
   focusOverlay.classList.remove('hidden');
   const data = bookData[index];
-  focusCurrent.innerText = (index + 1).toString().padStart(2, '0');
+  focusIndex.innerHTML = `
+    <span>${(index + 1).toString().padStart(2, '0')}</span>
+    <div class="focus-line"></div>
+    <span>${books.length.toString().padStart(2, '0')}</span>
+  `;
   focusTitle.innerText = data.title;
   focusAuthor.innerText = data.author;
 }
