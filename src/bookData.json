@@ -1,123 +1,93 @@
 [
   {
-    "title": "01 Harry Potter And The Sorcerer 39 S Stone J K Rowling",
+    "title": "Einstein Isaacson Walter",
     "author": "Unknown Author",
-    "color": "#D1C9BE",
-    "category": "Uncategorized",
-    "epubUrl": "books/01_Harry_Potter_and_the_Sorcerer_39_s_Stone_-_J_K_Rowling.epub"
-  },
-  {
-    "title": "03 Harry Potter And The Prisoner Of Azkaban J K Rowling (1)",
-    "author": "Unknown Author",
-    "color": "#879B75",
-    "category": "Uncategorized",
-    "epubUrl": "books/03_Harry_Potter_and_the_Prisoner_of_Azkaban_-_J_K_Rowling__1_.epub"
-  },
-  {
-    "title": "03 Harry Potter And The Prisoner Of Azkaban J K Rowling",
-    "author": "Unknown Author",
-    "color": "#E0B739",
-    "category": "Uncategorized",
-    "epubUrl": "books/03_Harry_Potter_and_the_Prisoner_of_Azkaban_-_J_K_Rowling.epub"
-  },
-  {
-    "title": "04 Harry Potter And The Goblet Of Fire J K Rowling",
-    "author": "Unknown Author",
-    "color": "#2A2A28",
-    "category": "Uncategorized",
-    "epubUrl": "books/04_Harry_Potter_and_the_Goblet_of_Fire_-_J_K_Rowling.epub"
-  },
-  {
-    "title": "05 Harry Potter And The Order Of The Phoenix J K Rowling",
-    "author": "Unknown Author",
-    "color": "#2B2B2B",
-    "category": "Uncategorized",
-    "epubUrl": "books/05_Harry_Potter_and_the_Order_of_the_Phoenix_-_J_K_Rowling.epub"
-  },
-  {
-    "title": "07 Harry Potter And The Deathly Hallows J K Rowling",
-    "author": "Unknown Author",
-    "color": "#D56E52",
-    "category": "Uncategorized",
-    "epubUrl": "books/07_Harry_Potter_and_the_Deathly_Hallows_-_J_K_Rowling.epub"
-  },
-  {
-    "title": "08 Harry Potter And The Cursed Child",
-    "author": "Unknown Author",
-    "color": "#2B2B2B",
-    "category": "Uncategorized",
-    "epubUrl": "books/08_Harry_Potter_and_the_Cursed_Child.epub"
+    "color": "#3B4A3F",
+    "category": "Biography",
+    "epubUrl": "books/Einstein_-_Isaacson_Walter.epub"
   },
   {
     "title": "Atomic Habits",
     "author": "Unknown Author",
     "color": "#2B2B2B",
-    "category": "Uncategorized",
+    "category": "Business",
     "epubUrl": "books/Atomic_Habits.epub"
   },
   {
     "title": "Deep Work",
     "author": "C Newport",
     "color": "#5F4B3C",
-    "category": "Uncategorized",
+    "category": "Business",
     "epubUrl": "books/Deep_Work_-_C_Newport.epub"
-  },
-  {
-    "title": "Einstein Isaacson Walter",
-    "author": "Unknown Author",
-    "color": "#3B4A3F",
-    "category": "Uncategorized",
-    "epubUrl": "books/Einstein_-_Isaacson_Walter.epub"
   },
   {
     "title": "Never Split The Difference Negotiating As",
     "author": "Chris Voss",
     "color": "#4B7A5C",
-    "category": "Uncategorized",
+    "category": "Business",
     "epubUrl": "books/Never_Split_the_Difference__Negotiating_as_-_Chris_Voss.epub"
-  },
-  {
-    "title": "Welcome To Your Brain Why You Lose Your Car Keys But Never Forget How To Drive",
-    "author": "Sandra Aamodt",
-    "color": "#2659A5",
-    "category": "Uncategorized",
-    "epubUrl": "books/Welcome_to_Your_Brain__Why_You_Lose_Your_Car_Keys_but_Never_Forget_How_to_Drive_-_Sandra_Aamodt.epub"
   },
   {
     "title": "The Hard Thing About Hard Things Building A Business When There Are No Easy Answers",
     "author": "Unknown Author",
     "color": "#D56E52",
-    "category": "Uncategorized",
+    "category": "Business",
     "epubUrl": "books/dokumen.pub_the-hard-thing-about-hard-things-building-a-business-when-there-are-no-easy-answers-9780062273215-9780062273208-0062273205.epub"
   },
   {
-    "title": "The Dream Machine",
-    "author": "M. Mitchell Waldrop",
-    "color": "#E88D56",
-    "category": "History"
-  },
-  {
-    "title": "The Art of Doing Science",
-    "author": "Richard W. Hamming",
-    "color": "#C44943",
-    "category": "Science"
-  },
-  {
-    "title": "Poor Charlie's Almanack",
-    "author": "Peter D. Kaufman",
-    "color": "#2B3B4C",
-    "category": "Business"
-  },
-  {
-    "title": "High Growth Handbook",
-    "author": "Elad Gil",
+    "title": "01 Harry Potter And The Sorcerer 39 S Stone J K Rowling",
+    "author": "Unknown Author",
     "color": "#D1C9BE",
-    "category": "Business"
+    "category": "Fantasy",
+    "epubUrl": "books/01_Harry_Potter_and_the_Sorcerer_39_s_Stone_-_J_K_Rowling.epub"
   },
   {
-    "title": "Origins of Efficiency",
-    "author": "Brian Potter",
-    "color": "#DE8A75",
-    "category": "Economics"
+    "title": "03 Harry Potter And The Prisoner Of Azkaban J K Rowling (1)",
+    "author": "Unknown Author",
+    "color": "#879B75",
+    "category": "Fantasy",
+    "epubUrl": "books/03_Harry_Potter_and_the_Prisoner_of_Azkaban_-_J_K_Rowling__1_.epub"
+  },
+  {
+    "title": "03 Harry Potter And The Prisoner Of Azkaban J K Rowling",
+    "author": "Unknown Author",
+    "color": "#E0B739",
+    "category": "Fantasy",
+    "epubUrl": "books/03_Harry_Potter_and_the_Prisoner_of_Azkaban_-_J_K_Rowling.epub"
+  },
+  {
+    "title": "04 Harry Potter And The Goblet Of Fire J K Rowling",
+    "author": "Unknown Author",
+    "color": "#2A2A28",
+    "category": "Fantasy",
+    "epubUrl": "books/04_Harry_Potter_and_the_Goblet_of_Fire_-_J_K_Rowling.epub"
+  },
+  {
+    "title": "05 Harry Potter And The Order Of The Phoenix J K Rowling",
+    "author": "Unknown Author",
+    "color": "#2B2B2B",
+    "category": "Fantasy",
+    "epubUrl": "books/05_Harry_Potter_and_the_Order_of_the_Phoenix_-_J_K_Rowling.epub"
+  },
+  {
+    "title": "07 Harry Potter And The Deathly Hallows J K Rowling",
+    "author": "Unknown Author",
+    "color": "#D56E52",
+    "category": "Fantasy",
+    "epubUrl": "books/07_Harry_Potter_and_the_Deathly_Hallows_-_J_K_Rowling.epub"
+  },
+  {
+    "title": "08 Harry Potter And The Cursed Child",
+    "author": "Unknown Author",
+    "color": "#2B2B2B",
+    "category": "Fantasy",
+    "epubUrl": "books/08_Harry_Potter_and_the_Cursed_Child.epub"
+  },
+  {
+    "title": "Welcome To Your Brain Why You Lose Your Car Keys But Never Forget How To Drive",
+    "author": "Sandra Aamodt",
+    "color": "#2659A5",
+    "category": "Science",
+    "epubUrl": "books/Welcome_to_Your_Brain__Why_You_Lose_Your_Car_Keys_but_Never_Forget_How_to_Drive_-_Sandra_Aamodt.epub"
   }
 ]
