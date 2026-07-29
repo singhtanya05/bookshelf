@@ -112,9 +112,13 @@ scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 2);
 dirLight.position.set(5, 5, 5);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.mapSize.width = 1024;
+dirLight.shadow.mapSize.height = 1024;
 scene.add(dirLight);
+
+const backLight = new THREE.DirectionalLight(0xffffff, 1.5);
+backLight.position.set(-5, 5, -5);
+scene.add(backLight);
 
 // Ancient Lamp Warm Light
 const lampLight = new THREE.PointLight(0xffaa55, 3, 20); // Warm orange/yellow
@@ -294,12 +298,12 @@ for (let i = 0; i < bookCount; i++) {
   const overhang = 0.015;
   
   const rcGeo = new THREE.BoxGeometry(coverThickness, bHeight + overhang*2, bDepth + overhang);
-  const rcMesh = new THREE.Mesh(rcGeo, [coverMat, bMat, bMat, bMat, bMat, bMat]);
+  const rcMesh = new THREE.Mesh(rcGeo, [bMat, bMat, bMat, bMat, coverMat, coverMat]);
   rcMesh.position.set(bWidth/2 - coverThickness/2, bHeight/2, overhang/2);
   rcMesh.castShadow = true; rcMesh.receiveShadow = true;
   
   const lcGeo = new THREE.BoxGeometry(coverThickness, bHeight + overhang*2, bDepth + overhang);
-  const lcMesh = new THREE.Mesh(lcGeo, bMat);
+  const lcMesh = new THREE.Mesh(lcGeo, [bMat, bMat, bMat, bMat, coverMat, coverMat]);
   lcMesh.position.set(-bWidth/2 + coverThickness/2, bHeight/2, overhang/2);
   lcMesh.castShadow = true; lcMesh.receiveShadow = true;
   
@@ -401,6 +405,13 @@ window.addEventListener('mousemove', (e) => {
         hoverTooltip.classList.add('visible');
         hoverTooltip.style.left = `${e.clientX}px`;
         hoverTooltip.style.top = `${e.clientY}px`;
+        
+        // Update Focus UI immediately on hover
+        const index = bookMetaMap.get(hoveredBook)!.index;
+        if (focusedIndex !== index) {
+          focusedIndex = index;
+          updateFocusUI(focusedIndex);
+        }
       } else {
         document.body.style.cursor = 'default';
         hoverTooltip.classList.remove('visible');
@@ -789,7 +800,7 @@ function animate() {
       group.scale.setScalar(THREE.MathUtils.lerp(group.scale.x, targetScale, 0.15));
     }
     
-    if (closestIndex !== focusedIndex && minDistance < 1.0) {
+    if (!hoveredBook && closestIndex !== focusedIndex && minDistance < 1.0) {
       focusedIndex = closestIndex;
       updateFocusUI(focusedIndex);
     }
