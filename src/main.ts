@@ -586,9 +586,29 @@ window.addEventListener('pointermove', (e) => {
 
 window.addEventListener('pointerup', (e) => {
   isDragging = false;
-  if (!isInspectMode && hoveredBook && Math.abs(e.clientX - lastX) < 5) {
-    hoverTooltip.classList.remove('visible');
-    inspectBook(hoveredBook);
+  if (!isInspectMode && Math.abs(e.clientX - lastX) < 5) {
+    // Perform a direct raycast at the pointer release coordinates
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(shelfGroup.children, true);
+    
+    let clickedBook: THREE.Group | null = null;
+    if (intersects.length > 0) {
+      let object: THREE.Object3D | null = intersects[0].object;
+      while (object && !books.includes(object as THREE.Group)) {
+        object = object.parent;
+      }
+      if (object) {
+        clickedBook = object as THREE.Group;
+      }
+    }
+
+    if (clickedBook) {
+      hoverTooltip.classList.remove('visible');
+      inspectBook(clickedBook);
+    }
   }
 });
 window.addEventListener('pointercancel', () => { 
