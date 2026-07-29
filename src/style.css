@@ -1302,9 +1302,10 @@ body.dark-theme .category-btn.active {
   }
 }
 
-/* Hide categories while reading */
+/* Hide categories while reading or inspecting a book */
 body:has(#epub-overlay:not(.hidden)) #category-filters-container,
-body:has(#pdf-reader-overlay:not(.hidden)) #category-filters-container {
+body:has(#pdf-reader-overlay:not(.hidden)) #category-filters-container,
+body:has(#focus-details:not(.hidden)) #category-filters-container {
   display: none !important;
 }
 
