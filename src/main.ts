@@ -986,6 +986,12 @@ function loadEpub(url: string, startCfi?: string) {
     flow: "paginated"
   });
 
+  if (epubSpread === 'auto') {
+    epubViewer.classList.add('spread-mode');
+  } else {
+    epubViewer.classList.remove('spread-mode');
+  }
+
   // Register Themes
   currentRendition.themes.register('light', {
     body: { 'color': '#2A2A28', 'background': '#fff', 'line-height': '1.8' },
@@ -1048,6 +1054,20 @@ function loadEpub(url: string, startCfi?: string) {
       localStorage.setItem(`epub-history-${data.title}`, location.start.cfi);
       if (currentBook.locations.length() > 0) {
         epubProgress.innerText = Math.round(location.start.percentage * 100) + '%';
+      }
+    }
+  });
+
+  // Attach keydown listener to iframe content to fix desktop arrow keys
+  currentRendition.on('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'ArrowRight') animateEpubTurn('next');
+    if (e.key === 'ArrowLeft') animateEpubTurn('prev');
+    if (e.key === 'Escape') {
+      epubOverlay.classList.add('hidden');
+      if (currentBook) {
+        currentBook.destroy();
+        currentBook = null;
+        currentRendition = null;
       }
     }
   });
@@ -1302,10 +1322,10 @@ function updateFocusUI(index: number) {
 
 // Mobile tap-to-turn pages inside readers
 document.getElementById('epub-tap-left')?.addEventListener('click', () => {
-  if (currentRendition) currentRendition.prev();
+  animateEpubTurn('prev');
 });
 document.getElementById('epub-tap-right')?.addEventListener('click', () => {
-  if (currentRendition) currentRendition.next();
+  animateEpubTurn('next');
 });
 document.getElementById('pdf-tap-left')?.addEventListener('click', () => {
   onPrevPage();

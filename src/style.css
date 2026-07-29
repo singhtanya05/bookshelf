@@ -855,6 +855,7 @@ body.dark-theme .setting-row select {
   overflow: hidden;
   position: relative;
   background: transparent;
+  perspective: 1500px; /* Enable 3D depth for page flips */
 }
 
 #epub-viewer {
@@ -865,6 +866,41 @@ body.dark-theme .setting-row select {
   background: var(--theme-reader-bg, #fff);
   border-radius: 4px;
   transition: background-color 0.3s ease;
+  position: relative; /* Position relative for the middle crease overlay */
+}
+
+/* Skeuomorphic center spine fold/crease for dual pages */
+#epub-viewer.spread-mode::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 30px;
+  transform: translateX(-50%);
+  background: linear-gradient(to right,
+    rgba(0, 0, 0, 0.0) 0%,
+    rgba(0, 0, 0, 0.02) 20%,
+    rgba(0, 0, 0, 0.1) 45%,
+    rgba(0, 0, 0, 0.18) 50%,
+    rgba(0, 0, 0, 0.1) 55%,
+    rgba(0, 0, 0, 0.02) 80%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+body.dark-theme #epub-viewer.spread-mode::after {
+  background: linear-gradient(to right,
+    rgba(0, 0, 0, 0.0) 0%,
+    rgba(0, 0, 0, 0.1) 20%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.35) 55%,
+    rgba(0, 0, 0, 0.1) 80%,
+    rgba(0, 0, 0, 0.0) 100%
+  );
 }
 
 .close-reader-btn {
@@ -908,35 +944,21 @@ body.dark-theme .setting-row select {
 .theme-sepia { background: #f4ecd8; border: 1px solid #dcd1be; }
 .theme-dark { background: #121212; border: 1px solid #333; }
 
-/* EPUB Transition Classes */
-.epub-slide-out-left {
-  animation: slideOutLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+/* EPUB Soothing Page Transition (Ultra-Soft Cross-Fade) */
+.epub-slide-out-left, .epub-slide-out-right {
+  animation: softFadeOut 0.3s ease-in-out forwards;
 }
-.epub-slide-in-right {
-  animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.epub-slide-out-right {
-  animation: slideOutRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.epub-slide-in-left {
-  animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.epub-slide-in-right, .epub-slide-in-left {
+  animation: softFadeIn 0.35s ease-in-out forwards;
 }
 
-@keyframes slideOutLeft {
-  0% { transform: translateX(0); opacity: 1; }
-  100% { transform: translateX(-50px); opacity: 0; }
+@keyframes softFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
-@keyframes slideInRight {
-  0% { transform: translateX(50px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-@keyframes slideOutRight {
-  0% { transform: translateX(0); opacity: 1; }
-  100% { transform: translateX(50px); opacity: 0; }
-}
-@keyframes slideInLeft {
-  0% { transform: translateX(-50px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
+@keyframes softFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 
@@ -1273,6 +1295,10 @@ body.dark-theme .category-btn.active {
 
   .reader-tap-zone.right {
     right: 0;
+  }
+
+  #epub-viewer::after {
+    display: none !important; /* Hide crease on mobile single page */
   }
 }
 
