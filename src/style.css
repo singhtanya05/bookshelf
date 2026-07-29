@@ -281,7 +281,7 @@ body {
 .inspect-desc {
   font-size: 1rem;
   line-height: 1.6;
-  margin-bottom: 2rem;
+  margin-top: 2rem;
 }
 
 .inspect-quote {
@@ -311,7 +311,7 @@ body {
   border-top: 1px solid #D3CFC6;
   border-bottom: 1px solid #D3CFC6;
   padding: 1.5rem 0;
-  margin-bottom: 2rem;
+  margin-top: 2rem;
 }
 
 .meta-col {
@@ -941,7 +941,7 @@ body.dark-theme .setting-row select {
 
 #category-filters-container {
   position: absolute;
-  bottom: 2rem;
+  top: 2rem;
   left: 0;
   width: 100vw;
   display: flex;
