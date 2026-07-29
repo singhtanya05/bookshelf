@@ -189,12 +189,15 @@ function createSpineTexture(title: string, author: string, color: string) {
   ctx.translate(canvas.width / 2, canvas.height - 200);
   ctx.rotate(-Math.PI / 2);
   
+  ctx.font = 'italic 50px "Playfair Display", serif';
+  const authorWidth = ctx.measureText(author).width;
+  
   ctx.font = 'bold 80px "Playfair Display", serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   
   let displayTitle = title;
-  const maxW = canvas.height - 400;
+  const maxW = canvas.height - 400 - authorWidth - 40; // 40px gap
   if (ctx.measureText(displayTitle).width > maxW) {
     while (displayTitle.length > 3 && ctx.measureText(displayTitle + '...').width > maxW) {
       displayTitle = displayTitle.slice(0, -2);
