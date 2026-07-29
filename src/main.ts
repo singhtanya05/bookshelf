@@ -78,6 +78,12 @@ interface BookData {
 const bookData: BookData[] = bookDataJson as BookData[];
 const bookCount = bookData.length;
 
+// Update Dynamic UI Counts
+const headerVolumeCount = document.getElementById('header-volume-count');
+if (headerVolumeCount) headerVolumeCount.innerText = `${bookCount} VOLUMES`;
+
+const statusVolumeCount = document.getElementById('status-volume-count');
+if (statusVolumeCount) statusVolumeCount.innerText = `${bookCount} VOLUMES READY`;
 // Setup scrubber ticks
 if (scrubberTicks) {
   scrubberTicks.innerHTML = '';
