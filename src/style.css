@@ -1227,4 +1227,62 @@ body.dark-theme .category-btn.active {
     width: 90vw;
     right: 5vw;
   }
+
+  /* Mobile Reader UI Fixes */
+  .epub-toolbar {
+    padding: 0.75rem 1rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  .toolbar-left, .toolbar-right {
+    flex: 1 1 auto !important;
+  }
+
+  .toolbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.25rem;
+    display: flex !important;
+  }
+
+  #epub-prev-btn, #epub-next-btn, #pdf-prev-btn, #pdf-next-btn {
+    display: none !important; /* Hide arrows on mobile in favor of tap-to-turn */
+  }
+
+  .pdf-reader-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .reader-tap-zone {
+    display: block;
+    position: absolute;
+    top: 60px; /* Below toolbar */
+    bottom: 0;
+    width: 30%;
+    z-index: 100; /* Float over iframe/canvas */
+    cursor: pointer;
+    background: transparent;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .reader-tap-zone.left {
+    left: 0;
+  }
+
+  .reader-tap-zone.right {
+    right: 0;
+  }
+}
+
+/* Hide categories while reading */
+body:has(#epub-overlay:not(.hidden)) #category-filters-container,
+body:has(#pdf-reader-overlay:not(.hidden)) #category-filters-container {
+  display: none !important;
+}
+
+/* Tap zone defaults for desktop (hidden) */
+.reader-tap-zone {
+  display: none;
 }
