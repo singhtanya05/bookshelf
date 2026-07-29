@@ -520,6 +520,7 @@ uniqueCategories.forEach(cat => {
 });
 let isDragging = false;
 let lastX = 0;
+let startX = 0;
 
 window.addEventListener('wheel', (e) => {
   if (isInspectMode) return;
@@ -532,6 +533,7 @@ window.addEventListener('pointerdown', (e) => {
   if (isInspectMode) return;
   if (e.target !== canvas) return; // Only drag on canvas
   isDragging = true;
+  startX = e.clientX;
   lastX = e.clientX;
 });
 
@@ -586,7 +588,8 @@ window.addEventListener('pointermove', (e) => {
 
 window.addEventListener('pointerup', (e) => {
   isDragging = false;
-  if (!isInspectMode && Math.abs(e.clientX - lastX) < 5) {
+  // Use startX to check if the total swipe/drag distance was less than 5px (a true tap)
+  if (!isInspectMode && Math.abs(e.clientX - startX) < 5) {
     // Perform a direct raycast at the pointer release coordinates
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
