@@ -182,8 +182,34 @@ function createSpineTexture(title: string, author: string, color: string) {
   }
   ctx.putImageData(imgData, 0, 0);
   
-  // Foil accents
-  ctx.fillStyle = '#D4AF37';
+  // Faux curvature (horizontal shading)
+  const spineShading = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  spineShading.addColorStop(0, 'rgba(0,0,0,0.4)');
+  spineShading.addColorStop(0.15, 'rgba(0,0,0,0.0)');
+  spineShading.addColorStop(0.5, 'rgba(255,255,255,0.1)');
+  spineShading.addColorStop(0.85, 'rgba(0,0,0,0.0)');
+  spineShading.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = spineShading;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Vignette (top and bottom edges)
+  const vignette = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  vignette.addColorStop(0, 'rgba(0,0,0,0.6)');
+  vignette.addColorStop(0.1, 'rgba(0,0,0,0)');
+  vignette.addColorStop(0.9, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.6)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Foil accents (Metallic Gradient)
+  const foilGrad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  foilGrad.addColorStop(0, '#8B6508');
+  foilGrad.addColorStop(0.3, '#FFD700');
+  foilGrad.addColorStop(0.5, '#FFF8DC');
+  foilGrad.addColorStop(0.7, '#FFD700');
+  foilGrad.addColorStop(1, '#8B6508');
+  
+  ctx.fillStyle = foilGrad;
   ctx.fillRect(30, 100, canvas.width - 60, 6);
   ctx.fillRect(30, 120, canvas.width - 60, 2);
   ctx.fillRect(30, canvas.height - 120, canvas.width - 60, 2);
@@ -242,8 +268,25 @@ function createCoverTexture(title: string, author: string, color: string) {
   }
   ctx.putImageData(imgData, 0, 0);
   
-  // Foil accent line
-  ctx.fillStyle = '#D4AF37';
+  // Radial Vignette
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const radius = Math.max(cx, cy) * 1.2;
+  const radialVignette = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius);
+  radialVignette.addColorStop(0, 'rgba(0,0,0,0)');
+  radialVignette.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = radialVignette;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Foil accent line (Metallic Gradient)
+  const coverFoil = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  coverFoil.addColorStop(0, '#8B6508');
+  coverFoil.addColorStop(0.3, '#FFD700');
+  coverFoil.addColorStop(0.5, '#FFF8DC');
+  coverFoil.addColorStop(0.7, '#FFD700');
+  coverFoil.addColorStop(1, '#8B6508');
+  
+  ctx.fillStyle = coverFoil;
   ctx.fillRect(80, 50, 4, canvas.height - 100);
   
   const isDark = color === '#2A2A28' || color === '#3B4A3F' || color === '#2B3B4C' || color === '#54407B';
@@ -333,9 +376,9 @@ for (let i = 0; i < bookCount; i++) {
   const spineTex = createSpineTexture(data.title, data.author, data.color);
   const coverTex = createCoverTexture(data.title, data.author, data.color);
   
-  const bMat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.9 });
-  const spineMat = new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.8 });
-  const coverMat = new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.8 });
+  const bMat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.5, metalness: 0.1 });
+  const spineMat = new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.5, metalness: 0.1 });
+  const coverMat = new THREE.MeshStandardMaterial({ map: coverTex, roughness: 0.5, metalness: 0.1 });
   
   const coverThickness = 0.015;
   const overhang = 0.015;
