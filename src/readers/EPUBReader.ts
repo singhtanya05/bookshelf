@@ -31,6 +31,7 @@ export class EPUBReader {
   }
 
   public load(url: string, startCfi?: string): void {
+    this.epubOverlay.classList.remove('hidden');
     if (this.currentBook) {
       this.currentBook.destroy();
     }
