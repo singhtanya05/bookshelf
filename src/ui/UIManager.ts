@@ -32,6 +32,15 @@ export class UIManager {
   private searchInput: HTMLInputElement;
   private searchResults: HTMLElement;
 
+  // Unlock Modal Elements
+  private unlockModal: HTMLElement;
+  private unlockInput: HTMLInputElement;
+  private unlockSubmitBtn: HTMLButtonElement;
+  private demoPreviewBtn: HTMLButtonElement;
+  private closeUnlockBtn: HTMLButtonElement;
+  private unlockError: HTMLElement;
+  private pendingBookData: BookData | null = null;
+
   private activeBookGetter: () => THREE.Group | null;
   private inspectBookHandler: (book: THREE.Group) => void;
 
@@ -72,6 +81,13 @@ export class UIManager {
 
     this.searchInput = document.getElementById('search-input') as HTMLInputElement;
     this.searchResults = document.getElementById('search-results') as HTMLElement;
+
+    this.unlockModal = document.getElementById('unlock-modal') as HTMLElement;
+    this.unlockInput = document.getElementById('unlock-password') as HTMLInputElement;
+    this.unlockSubmitBtn = document.getElementById('unlock-submit-btn') as HTMLButtonElement;
+    this.demoPreviewBtn = document.getElementById('demo-preview-btn') as HTMLButtonElement;
+    this.closeUnlockBtn = document.getElementById('close-unlock-btn') as HTMLButtonElement;
+    this.unlockError = document.getElementById('unlock-error') as HTMLElement;
 
     this.initCounters();
     this.initScrubber();
@@ -192,6 +208,55 @@ export class UIManager {
     });
   }
 
+  private initUnlockModal(): void {
+    const SECRET_CODE = 'tanya123';
+    
+    this.unlockSubmitBtn.addEventListener('click', () => {
+      if (this.unlockInput.value === SECRET_CODE) {
+        sessionStorage.setItem('library-unlocked', 'true');
+        this.unlockModal.classList.add('hidden');
+        if (this.pendingBookData) {
+          this.loadBook(this.pendingBookData);
+        }
+      } else {
+        this.unlockError.classList.remove('hidden');
+      }
+    });
+
+    this.unlockInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.unlockSubmitBtn.click();
+      }
+    });
+
+    this.demoPreviewBtn.addEventListener('click', () => {
+      this.unlockModal.classList.add('hidden');
+      // Load the Gutenberg demo EPUB
+      this.epubReader.load('books/demo.epub');
+    });
+
+    this.closeUnlockBtn.addEventListener('click', () => {
+      this.unlockModal.classList.add('hidden');
+    });
+
+    // Close on click outside content
+    this.unlockModal.addEventListener('click', (e) => {
+      if (e.target === this.unlockModal) {
+        this.unlockModal.classList.add('hidden');
+      }
+    });
+  }
+
+  private loadBook(data: BookData): void {
+    if (data.epubUrl) {
+      this.epubReader.load(data.epubUrl);
+    } else if (data.pdfUrl) {
+      this.pdfReader.load(data.pdfUrl);
+    } else {
+      alert("This physical volume is currently not available for digital reading.");
+    }
+  }
+
   private initReadersTrigger(): void {
     this.viewBookBtn.addEventListener('click', () => {
       const activeBook = this.activeBookGetter();
@@ -199,15 +264,20 @@ export class UIManager {
       
       const meta = this.shelfMgr.bookMetaMap.get(activeBook)!;
       const data = this.bookData[meta.index];
-      
-      if (data.epubUrl) {
-        this.epubReader.load(data.epubUrl);
-      } else if (data.pdfUrl) {
-        this.pdfReader.load(data.pdfUrl);
+      this.pendingBookData = data;
+
+      const isUnlocked = sessionStorage.getItem('library-unlocked') === 'true';
+      if (isUnlocked) {
+        this.loadBook(data);
       } else {
-        alert("This physical volume is currently not available for digital reading.");
+        this.unlockError.classList.add('hidden');
+        this.unlockInput.value = '';
+        this.unlockModal.classList.remove('hidden');
+        this.unlockInput.focus();
       }
     });
+    
+    this.initUnlockModal();
   }
 
   public showInspectUI(title: string, author: string): void {
