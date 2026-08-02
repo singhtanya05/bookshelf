@@ -200,6 +200,21 @@
       </div>
     </div>
     
+    <!-- Library Unlock Modal -->
+    <div id="unlock-modal" class="hidden">
+      <div class="unlock-content">
+        <button id="close-unlock-btn">&times;</button>
+        <h3>Unlock Full Library</h3>
+        <p>This is a portfolio showcase. To read this copyrighted volume, please enter the access passcode. Guests can select "Demo Preview" to read a free public-domain book instead.</p>
+        <input type="password" id="unlock-password" placeholder="Enter passcode...">
+        <div id="unlock-error" class="hidden">Incorrect passcode. Please try again.</div>
+        <div class="unlock-buttons">
+          <button id="demo-preview-btn">DEMO PREVIEW</button>
+          <button id="unlock-submit-btn">UNLOCK</button>
+        </div>
+      </div>
+    </div>
+    
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
