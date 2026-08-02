@@ -351,6 +351,15 @@ body {
 
 .view-book-link:hover { opacity: 0.6; }
 
+.disclaimer-text {
+  font-size: 0.68rem;
+  color: var(--color-text);
+  opacity: 0.55;
+  margin-top: 0.8rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
 #return-button {
   background: transparent;
   border: none;
