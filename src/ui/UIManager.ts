@@ -4,6 +4,7 @@ import type { PDFReader } from '../readers/PDFReader';
 import type { AuthManager } from '../auth/AuthManager';
 import type { BookVault } from '../data/BookVault';
 import type { ProgressStore } from '../data/ProgressStore';
+import { triggerConversion } from '../data/ConversionTrigger';
 import * as THREE from 'three';
 
 export class UIManager {
@@ -316,9 +317,13 @@ export class UIManager {
         const blob = await this.vault.blobFor(data);
         await this.epubReader.load(data.id, await blob.arrayBuffer());
       } else {
+        // Covers a book uploaded before automatic conversion existed, or one
+        // whose automatic trigger silently failed — this doubles as retry.
+        const result = await triggerConversion(data.id);
         alert(
-          `${data.format.toUpperCase()} files are not readable in the browser yet. ` +
-          `This one is queued for conversion to EPUB.`,
+          result.ok
+            ? `${result.message} Come back in a bit and try again.`
+            : `Could not convert this ${data.format.toUpperCase()} file: ${result.message}`,
         );
       }
     } catch (e) {

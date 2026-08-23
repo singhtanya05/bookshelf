@@ -129,7 +129,47 @@ your 17 files), and takes the category from the folder name.
 
 ---
 
-## 8. Purge the books from git history
+## 8. Automatic MOBI/AZW3 conversion
+
+Without this, converting an uploaded MOBI/AZW3 book means going to GitHub
+Actions by hand and pasting its id. This wires the app to do that itself —
+automatically right after upload, or as a one-click retry when opening a
+book that's still in the queue.
+
+**Create a fine-grained GitHub PAT**, scoped to this repo only:
+GitHub → Settings → Developer settings → Personal access tokens →
+Fine-grained tokens → **Generate new token**.
+
+- Repository access: **Only select repositories** → this repo
+- Permissions → **Actions: Read and write**. Nothing else.
+
+**Deploy the Edge Function:**
+
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>   # from the Supabase URL
+npx supabase functions deploy convert-book
+```
+
+**Set its secrets** (these live on Supabase's servers, never in the repo or
+the bundle):
+
+```bash
+npx supabase secrets set   GITHUB_PAT=<the fine-grained token>   GITHUB_OWNER=singhtanya05   GITHUB_REPO=bookshelf
+```
+
+That's it — `SUPABASE_URL` and `SUPABASE_ANON_KEY` are injected into every
+Edge Function automatically, so nothing else to configure. From here, a
+MOBI/AZW3 upload starts converting itself; opening one that's still
+converting offers a retry instead of a dead end.
+
+The function re-checks membership itself, the same way the RLS policies do —
+so the PAT it holds can only ever be triggered on the two of your behalf,
+never by an anonymous visitor even if they somehow found the function's URL.
+
+---
+
+## 9. Purge the books from git history
 
 Deleting them in a commit is not enough — they stay reachable in older
 commits, clones, and forks.
@@ -170,7 +210,7 @@ pings weekly to prevent that.
 |---|---|
 | EPUB | Read directly |
 | PDF | Read directly |
-| MOBI / AZW3 | Uploads accepted, converted to EPUB by `convert-ebook.yml` |
+| MOBI / AZW3 | Converts to EPUB automatically on upload (step 8), via `convert-ebook.yml` |
 | CBZ / TXT | Accepted by the schema; no reader yet |
 
 **DRM-protected Kindle files cannot be read or converted by any of this.**

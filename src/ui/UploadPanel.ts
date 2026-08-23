@@ -1,5 +1,6 @@
 import ePub from 'epubjs';
 import { db } from '../data/supabase';
+import { triggerConversion } from '../data/ConversionTrigger';
 import type { AuthManager } from '../auth/AuthManager';
 
 const PALETTE = [
@@ -205,12 +206,17 @@ export class UploadPanel {
         );
       }
 
-      this.status.textContent = NEEDS_CONVERSION.includes(format)
-        ? 'Uploaded. Conversion to EPUB will run shortly.'
-        : 'Added to your shelf.';
-
-      await this.onUploaded();
-      setTimeout(() => this.close(), 1200);
+      if (NEEDS_CONVERSION.includes(format)) {
+        this.status.textContent = 'Uploaded — starting conversion…';
+        const result = await triggerConversion(id);
+        this.status.textContent = result.message;
+        await this.onUploaded();
+        setTimeout(() => this.close(), 2500);
+      } else {
+        this.status.textContent = 'Added to your shelf.';
+        await this.onUploaded();
+        setTimeout(() => this.close(), 1200);
+      }
     } catch (e) {
       this.status.textContent = e instanceof Error ? e.message : 'Upload failed.';
       this.submitBtn.disabled = false;
