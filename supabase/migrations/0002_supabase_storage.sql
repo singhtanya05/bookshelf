@@ -16,7 +16,7 @@ alter table books add column if not exists public_path text;
 create or replace view public_catalogue
 with (security_invoker = off) as
   select id, title, author, category, format, spine_color, cover_path,
-         is_public, public_path
+         is_public, public_path, created_at
   from books;
 
 revoke all on public_catalogue from anon, authenticated;

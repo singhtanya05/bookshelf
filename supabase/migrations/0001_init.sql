@@ -141,7 +141,8 @@ create policy ann_delete on annotations
 -- policy above while still exposing just these columns.
 create or replace view public_catalogue
 with (security_invoker = off) as
-  select id, title, author, category, format, spine_color, cover_path, is_public
+  select id, title, author, category, format, spine_color, cover_path,
+         is_public, created_at
   from books;
 
 revoke all on public_catalogue from anon, authenticated;
