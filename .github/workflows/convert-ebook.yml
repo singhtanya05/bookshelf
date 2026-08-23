@@ -2,7 +2,7 @@ name: Convert MOBI/AZW3 to EPUB
 
 # No browser renders MOBI or AZW3, so uploads in those formats are converted
 # here with Calibre and written back as EPUB. Trigger manually with the
-# catalogue id of the book to convert.
+# catalogue id and the current storage key.
 #
 # NOTE: DRM-protected Kindle files cannot be converted and will fail here.
 # Only DRM-free files work.
@@ -16,19 +16,31 @@ on:
 jobs:
   convert:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Install Calibre
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends calibre
 
-      - name: Fetch source file
-        env:
-          VAULT_URL: ${{ secrets.VITE_VAULT_URL }}
-          SERVICE_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Look up the storage key
+        id: lookup
         run: |
-          curl -fsSL -H "Authorization: Bearer $SERVICE_TOKEN" \
-            "$VAULT_URL/book/${{ inputs.book_id }}" -o source.bin
+          key=$(curl -fsS \
+            -H "apikey: $SERVICE_ROLE" -H "Authorization: Bearer $SERVICE_ROLE" \
+            "$SUPABASE_URL/rest/v1/books?id=eq.${{ inputs.book_id }}&select=storage_key" \
+            | python3 -c 'import sys,json; print(json.load(sys.stdin)[0]["storage_key"])')
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+          echo "source key: $key"
+
+      - name: Download source
+        run: |
+          curl -fsSL \
+            -H "apikey: $SERVICE_ROLE" -H "Authorization: Bearer $SERVICE_ROLE" \
+            "$SUPABASE_URL/storage/v1/object/books/${{ steps.lookup.outputs.key }}" \
+            -o source.bin
           ls -lh source.bin
 
       - name: Convert to EPUB
@@ -38,24 +50,26 @@ jobs:
           ls -lh output.epub
 
       - name: Upload converted EPUB
-        env:
-          VAULT_URL: ${{ secrets.VITE_VAULT_URL }}
-          SERVICE_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
+          newkey="library/${{ inputs.book_id }}.epub"
           curl -fsS -X POST \
-            -H "Authorization: Bearer $SERVICE_TOKEN" \
+            -H "apikey: $SERVICE_ROLE" -H "Authorization: Bearer $SERVICE_ROLE" \
             -H "Content-Type: application/epub+zip" \
+            -H "x-upsert: true" \
             --data-binary @output.epub \
-            "$VAULT_URL/book/${{ inputs.book_id }}"
+            "$SUPABASE_URL/storage/v1/object/books/$newkey"
+          echo "newkey=$newkey" >> "$GITHUB_ENV"
 
-      - name: Mark as EPUB in the catalogue
-        env:
-          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Point the catalogue at the EPUB
         run: |
           curl -fsS -X PATCH \
-            -H "apikey: $SERVICE_ROLE" \
-            -H "Authorization: Bearer $SERVICE_ROLE" \
+            -H "apikey: $SERVICE_ROLE" -H "Authorization: Bearer $SERVICE_ROLE" \
             -H "Content-Type: application/json" \
-            -d '{"format":"epub"}' \
+            -d "{\"format\":\"epub\",\"storage_key\":\"$newkey\"}" \
             "$SUPABASE_URL/rest/v1/books?id=eq.${{ inputs.book_id }}"
+
+      - name: Remove the original
+        run: |
+          curl -fsS -X DELETE \
+            -H "apikey: $SERVICE_ROLE" -H "Authorization: Bearer $SERVICE_ROLE" \
+            "$SUPABASE_URL/storage/v1/object/books/${{ steps.lookup.outputs.key }}" || true

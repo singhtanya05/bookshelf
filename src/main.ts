@@ -14,7 +14,7 @@ import { Catalogue } from './data/Catalogue';
 import { BookVault } from './data/BookVault';
 import { ProgressStore } from './data/ProgressStore';
 import { AnnotationStore } from './data/AnnotationStore';
-import { isConfigured } from './data/config';
+import { isConfigured, isPlaceholderConfig } from './data/config';
 
 async function bootstrap(): Promise<void> {
   const canvas = document.querySelector('#canvas') as HTMLCanvasElement;
@@ -25,15 +25,29 @@ async function bootstrap(): Promise<void> {
   await auth.init();
 
   const catalogue = new Catalogue();
-  const vault = new BookVault(() => auth.accessToken);
+  const vault = new BookVault();
   const progress = new ProgressStore(() => auth.userId);
   const annotations = new AnnotationStore(() => auth.userId);
 
   await catalogue.load(auth.isMember);
 
-  if (!isConfigured) {
-    const notice = document.getElementById('setup-notice');
-    notice?.classList.remove('hidden');
+  // Three distinct states, each with its own message. Silently showing an
+  // empty shelf is the one outcome that helps nobody.
+  const notice = document.getElementById('setup-notice');
+  if (notice) {
+    const setNotice = (text: string) => {
+      notice.textContent = text;
+      notice.title = text; // full message on hover, since the bar clips to one line
+      notice.classList.remove('hidden');
+    };
+
+    if (isPlaceholderConfig) {
+      setNotice('.env.local still has template values — fill in your Supabase URL and anon key, then restart the dev server.');
+    } else if (!isConfigured) {
+      setNotice('Backend not configured (see docs/SETUP.md) — only the demo book will open.');
+    } else if (catalogue.lastError) {
+      setNotice(`Cannot reach the library: ${catalogue.lastError}`);
+    }
   }
 
   const shelfMgr = new ShelfManager(

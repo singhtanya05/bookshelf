@@ -10,6 +10,10 @@ export interface CatalogueEntry {
   spine_color: string;
   cover_path: string | null;
   is_public: boolean;
+  /** Site-relative path for public-domain books. Safe to expose. */
+  public_path: string | null;
+  /** Private bucket key. Present only for members; anon never receives it. */
+  storage_key?: string;
 }
 
 /**
@@ -33,31 +37,47 @@ const DEMO_ENTRY: CatalogueEntry = {
   spine_color: '#5F4B3C',
   cover_path: null,
   is_public: true,
+  public_path: 'books/demo.epub',
 };
 
 export class Catalogue {
   private entries: CatalogueEntry[] = [];
+  /** Set when the backend is configured but unreachable or rejecting us. */
+  public lastError: string | null = null;
 
   async load(isMember: boolean): Promise<CatalogueEntry[]> {
     const supabase = db();
+    this.lastError = null;
     if (!supabase) {
       this.entries = [DEMO_ENTRY];
       return this.entries;
     }
 
+    // Members read the table (and get storage_key); everyone else reads the
+    // view, which has no such column to give them.
     const source = isMember ? 'books' : 'public_catalogue';
-    const { data, error } = await supabase
-      .from(source)
-      .select('id, title, author, category, format, spine_color, cover_path, is_public')
-      .order('created_at', { ascending: true });
+    const columns =
+      'id, title, author, category, format, spine_color, cover_path, is_public, public_path' +
+      (isMember ? ', storage_key' : '');
 
-    if (error) {
-      console.error('[catalogue] load failed:', error.message);
+    let data: unknown[] | null = null;
+    try {
+      const res = await supabase
+        .from(source)
+        .select(columns)
+        .order('created_at', { ascending: true });
+      if (res.error) throw new Error(res.error.message);
+      data = res.data as unknown[];
+    } catch (e) {
+      // A wrong URL surfaces as a network failure, not a Postgres error, so
+      // both paths land here and produce one honest message.
+      this.lastError = e instanceof Error ? e.message : 'Unknown error';
+      console.error('[catalogue] load failed:', this.lastError);
       this.entries = [DEMO_ENTRY];
       return this.entries;
     }
 
-    this.entries = (data ?? []) as CatalogueEntry[];
+    this.entries = (data ?? []) as unknown as CatalogueEntry[];
     return this.entries;
   }
 

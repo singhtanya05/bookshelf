@@ -8,16 +8,17 @@
  *
  * Uses the service_role key, so run it locally only. Never ship that key.
  *
+ *   export SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... MEMBER_ID=...
  *   node scripts/import-library.mjs ~/projects/books/library-master
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAULT_URL, MEMBER_ID } = process.env;
+const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MEMBER_ID } = process.env;
 const ROOT = process.argv[2];
 
-for (const [k, v] of Object.entries({ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAULT_URL, MEMBER_ID })) {
+for (const [k, v] of Object.entries({ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MEMBER_ID })) {
   if (!v) { console.error(`Missing env var: ${k}`); process.exit(1); }
 }
 if (!ROOT || !fs.existsSync(ROOT)) {
@@ -120,9 +121,10 @@ for (const f of files) {
     continue;
   }
 
-  const put = await fetch(`${VAULT_URL}/book/${id}`, {
+  const put = await fetch(`${SUPABASE_URL}/storage/v1/object/books/${storageKey}`, {
     method: 'POST',
     headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       'Content-Type': format === 'epub' ? 'application/epub+zip' : 'application/octet-stream',
     },
@@ -135,7 +137,7 @@ for (const f of files) {
       method: 'DELETE',
       headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
     });
-    console.error(`  FAILED upload: ${title} (${put.status}) — row rolled back`);
+    console.error(`  FAILED upload: ${title} (${put.status}) ${await put.text()} — row rolled back`);
     continue;
   }
 

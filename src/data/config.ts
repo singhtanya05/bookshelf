@@ -6,14 +6,31 @@
  * the data. There is no passcode and no storage path in this file, because
  * there is no longer a client-side secret to keep.
  */
+
+/**
+ * A freshly copied .env.example still holds its placeholders. Treating those
+ * as real config sends the app off to resolve YOUR-PROJECT.supabase.co and
+ * leaves a blank shelf with no explanation, so they count as unset.
+ */
+const PLACEHOLDERS = /YOUR-PROJECT|your-anon-key|YOUR-SUBDOMAIN|xxxxx/i;
+
+function realValue(raw: string | undefined): string {
+  const v = (raw ?? '').trim();
+  return v && !PLACEHOLDERS.test(v) ? v : '';
+}
+
 export const config = {
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? '',
-  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
-  /** Cloudflare Worker that gates the private bucket. */
-  vaultUrl: (import.meta.env.VITE_VAULT_URL ?? '').replace(/\/$/, ''),
+  supabaseUrl: realValue(import.meta.env.VITE_SUPABASE_URL),
+  supabaseAnonKey: realValue(import.meta.env.VITE_SUPABASE_ANON_KEY),
 };
 
 /** False before the cloud backend is wired up; the shelf still renders. */
-export const isConfigured = Boolean(
-  config.supabaseUrl && config.supabaseAnonKey && config.vaultUrl,
-);
+export const isConfigured = Boolean(config.supabaseUrl && config.supabaseAnonKey);
+
+/** True when the file exists but still holds template values. */
+export const isPlaceholderConfig =
+  !isConfigured &&
+  Boolean(
+    (import.meta.env.VITE_SUPABASE_URL ?? '').trim() ||
+      (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim(),
+  );

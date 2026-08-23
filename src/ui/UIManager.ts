@@ -311,9 +311,9 @@ export class UIManager {
   private async openBook(data: BookData): Promise<void> {
     try {
       if (data.format === 'pdf') {
-        this.pdfReader.load(data.id, await this.vault.urlFor(data.id));
+        this.pdfReader.load(data.id, await this.vault.urlFor(data));
       } else if (data.format === 'epub') {
-        const blob = await this.vault.blobFor(data.id);
+        const blob = await this.vault.blobFor(data);
         await this.epubReader.load(data.id, await blob.arrayBuffer());
       } else {
         alert(

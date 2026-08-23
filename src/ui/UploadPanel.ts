@@ -1,6 +1,5 @@
 import ePub from 'epubjs';
 import { db } from '../data/supabase';
-import { config } from '../data/config';
 import type { AuthManager } from '../auth/AuthManager';
 
 const PALETTE = [
@@ -189,20 +188,21 @@ export class UploadPanel {
       if (insertError) throw new Error(insertError.message);
 
       this.status.textContent = 'Uploading book…';
-      const res = await fetch(`${config.vaultUrl}/book/${id}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.auth.accessToken}`,
-          'Content-Type': this.file.type || 'application/octet-stream',
-        },
-        body: this.file,
-      });
+      const { error: uploadError } = await supabase.storage
+        .from('books')
+        .upload(storageKey, this.file, {
+          contentType: this.file.type || 'application/octet-stream',
+          upsert: false,
+        });
 
-      if (!res.ok) {
+      if (uploadError) {
         // Roll the row back so the shelf never shows a book with no bytes.
         await supabase.from('books').delete().eq('id', id);
-        const detail = res.status === 413 ? 'File is larger than the 100MB limit.' : `Upload failed (${res.status}).`;
-        throw new Error(detail);
+        throw new Error(
+          /exceeded the maximum allowed size/i.test(uploadError.message)
+            ? 'File is larger than the 50MB bucket limit.'
+            : uploadError.message,
+        );
       }
 
       this.status.textContent = NEEDS_CONVERSION.includes(format)
