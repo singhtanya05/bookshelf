@@ -55,8 +55,16 @@ Books go here rather than Supabase Storage: **10GB free instead of 1GB, and
 egress is free permanently.** Past 10GB it is $0.015/GB-month, so a 50GB
 library costs about $0.75/month.
 
+> **Heads up:** Cloudflare asks for a payment method before it will enable
+> R2, even though the free 10GB then applies and you will not be charged.
+> If you would rather not put a card down, use **Supabase Storage** instead:
+> create a private bucket named `books` there. It is 1GB rather than 10GB —
+> about 800 EPUBs at your average size of 1.26MB — and you can move to R2
+> later without touching the catalogue, since only `storage_key` changes.
+
 1. Create a Cloudflare account (free).
-2. **R2** → create a bucket named `shelf-books`. Leave it **private**.
+2. **R2** → *Create bucket* → name it `shelf-books`. Leave it **private**
+   (do not enable a public r2.dev domain).
 3. Deploy the Worker:
 
    ```bash
