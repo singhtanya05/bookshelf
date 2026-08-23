@@ -20,19 +20,25 @@ Handles sign-in, reading positions, and annotations. Not the book files.
 4. **Authentication → Providers** → enable Email.
    Turn **off** "Enable new user signups" once both of you have accounts.
    That closes the door behind you.
-5. Create your two accounts (Authentication → Users → Add user).
-6. Make them members. Membership is deliberately not self-serve — signing up
-   is not enough to read anything. In the SQL Editor:
+5. Create the two accounts (Authentication → Users → **Add user**).
+   Set a password for each and tick *Auto Confirm User*. Two accounts:
+   one for **Tee**, one for **Vee**.
+6. Copy each new user's UUID from that same Users list.
+7. Make them members:
 
-   ```sql
-   insert into members (user_id, display_name, color) values
-     ('<your-uuid>',   'Tanya',  '#E88D56'),
-     ('<friend-uuid>', 'Friend', '#2659A5');
+   ```bash
+   cp supabase/seed.members.template.sql supabase/seed.members.sql
    ```
 
-   The colours are what distinguish your highlights from theirs.
+   Fill in the two UUIDs, then paste it into the SQL Editor and run it.
+   The real file is gitignored — this repo is public, and account
+   identifiers do not belong in it.
 
-7. From **Settings → API**, note the **Project URL** and the **anon** key.
+   Membership is deliberately not self-serve: signing up gives a session,
+   but only a row in `members` grants access to any book. The colours are
+   what distinguish Tee's highlights from Vee's.
+
+8. From **Settings → API**, note the **Project URL** and the **anon** key.
 
 > The anon key belongs in the bundle — row-level security, not secrecy, is
 > what protects the data. The **service_role** key must never go in the

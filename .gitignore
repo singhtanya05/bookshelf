@@ -32,3 +32,6 @@ public/books/*
 # Local secrets
 .env
 .env.local
+
+# Real member identifiers — never commit these to a public repo.
+supabase/seed.members.sql
