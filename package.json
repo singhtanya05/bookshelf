@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch-path=./bookspdf sync-books.mjs & vite",
-    "build": "node sync-books.mjs && tsc && vite build",
-    "preview": "vite preview"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/three": "^0.185.1",
@@ -15,8 +16,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@supabase/supabase-js": "^2.112.3",
     "epubjs": "^0.3.93",
     "gsap": "^3.15.0",
+    "idb-keyval": "^6.3.0",
     "pdfjs-dist": "^6.1.200",
     "three": "^0.185.1"
   }

@@ -1,0 +1,14 @@
+name = "shelf-vault"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+
+[[r2_buckets]]
+binding = "BOOKS"
+bucket_name = "shelf-books"
+
+[vars]
+# Overridden per-environment. Anon key is safe to expose (RLS enforces access);
+# the service_role key must NEVER appear here.
+SUPABASE_URL = ""
+SUPABASE_ANON_KEY = ""
+ALLOWED_ORIGINS = "https://singhtanya05.github.io,http://localhost:5173"

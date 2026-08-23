@@ -2,14 +2,10 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { BookComponent, type BookMeta } from './BookComponent';
 
-export interface BookData {
-  title: string;
-  author: string;
-  color: string;
-  category?: string;
-  pdfUrl?: string;
-  epubUrl?: string;
-}
+import type { CatalogueEntry } from '../data/Catalogue';
+
+/** The shelf renders straight from the catalogue; there is no second shape. */
+export type BookData = CatalogueEntry;
 
 export class ShelfManager {
   public shelfGroup: THREE.Group;
@@ -24,9 +20,11 @@ export class ShelfManager {
   private bookData: BookData[];
   private bookMargin = 0.02;
   private totalWidths: number[] = [];
+  private maxAnisotropy: number;
 
   constructor(scene: THREE.Scene, bookData: BookData[], maxAnisotropy: number) {
     this.bookData = bookData;
+    this.maxAnisotropy = maxAnisotropy;
     this.shelfGroup = new THREE.Group();
     scene.add(this.shelfGroup);
 
@@ -97,7 +95,7 @@ export class ShelfManager {
         i,
         data.title,
         data.author,
-        data.color,
+        data.spine_color,
         bWidth,
         bHeight,
         bDepth,
@@ -117,7 +115,35 @@ export class ShelfManager {
       currentX += bWidth + this.bookMargin;
     }
 
-    this.maxScroll = currentX - this.totalWidths[bookCount - 1] / 2;
+    this.maxScroll =
+      bookCount > 0 ? currentX - this.totalWidths[bookCount - 1] / 2 : 0;
+  }
+
+  /** Swap the whole shelf — used when signing in reveals the full library. */
+  public rebuild(bookData: BookData[]): void {
+    for (const group of this.books) {
+      this.shelfGroup.remove(group);
+      group.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+        const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat?.dispose();
+      });
+    }
+
+    this.books = [];
+    this.bookMetaMap.clear();
+    this.totalWidths = [];
+    this.bookData = bookData;
+
+    this.initBooks(this.maxAnisotropy);
+    this.scrollTarget = this.maxScroll / 2;
+    this.currentScroll = this.scrollTarget;
+  }
+
+  public get entries(): BookData[] {
+    return this.bookData;
   }
 
   public filterBooks(category: string): void {

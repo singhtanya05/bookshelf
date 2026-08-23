@@ -1,46 +1,50 @@
-import { type BookData, ShelfManager } from '../components/ShelfManager';
-import { EPUBReader } from '../readers/EPUBReader';
-import { PDFReader } from '../readers/PDFReader';
+import type { ShelfManager, BookData } from '../components/ShelfManager';
+import type { EPUBReader } from '../readers/EPUBReader';
+import type { PDFReader } from '../readers/PDFReader';
+import type { AuthManager } from '../auth/AuthManager';
+import type { BookVault } from '../data/BookVault';
+import type { ProgressStore } from '../data/ProgressStore';
 import * as THREE from 'three';
 
 export class UIManager {
+  private header!: HTMLElement;
+  private statusInd!: HTMLElement;
+  private footer!: HTMLElement;
+  private navLeft!: HTMLButtonElement;
+  private navRight!: HTMLButtonElement;
+  private inspectBtn!: HTMLButtonElement;
+
+  private focusOverlay!: HTMLElement;
+  private focusIndex!: HTMLElement;
+  private focusTitle!: HTMLElement;
+  private focusAuthor!: HTMLElement;
+
+  private returnBtn!: HTMLButtonElement;
+  private focusDetails!: HTMLElement;
+  private viewBookBtn!: HTMLButtonElement;
+  private circleNote!: HTMLElement;
+
+  private hoverTooltip!: HTMLElement;
+  private scrubberThumb!: HTMLElement;
+  private scrubberTicks!: HTMLElement;
+
+  private searchInput!: HTMLInputElement;
+  private searchResults!: HTMLElement;
+
+  private authModal!: HTMLElement;
+  private emailInput!: HTMLInputElement;
+  private passwordInput!: HTMLInputElement;
+  private authError!: HTMLElement;
+  private authStatus!: HTMLElement;
+
+  private pendingBook: BookData | null = null;
+
   private shelfMgr: ShelfManager;
   private epubReader: EPUBReader;
   private pdfReader: PDFReader;
-  private bookData: BookData[];
-
-  private header: HTMLElement;
-  private statusInd: HTMLElement;
-  private footer: HTMLElement;
-  private navLeft: HTMLButtonElement;
-  private navRight: HTMLButtonElement;
-  private inspectBtn: HTMLButtonElement;
-  
-  private focusOverlay: HTMLElement;
-  private focusIndex: HTMLElement;
-  private focusTitle: HTMLElement;
-  private focusAuthor: HTMLElement;
-  
-  private returnBtn: HTMLButtonElement;
-  private focusDetails: HTMLElement;
-  private viewBookBtn: HTMLButtonElement;
-  
-  private hoverTooltip: HTMLElement;
-  private scrubberThumb: HTMLElement;
-  private scrubberTicks: HTMLElement;
-  
-  private searchInput: HTMLInputElement;
-  private searchResults: HTMLElement;
-
-  // Unlock Modal Elements
-  private unlockModal: HTMLElement;
-  private unlockInput: HTMLInputElement;
-  private unlockSubmitBtn: HTMLButtonElement;
-  private demoPreviewBtn: HTMLButtonElement;
-  private closeUnlockBtn: HTMLButtonElement;
-  private unlockError: HTMLElement;
-  private pendingBookData: BookData | null = null;
-
+  private auth: AuthManager;
+  private vault: BookVault;
+  private progress: ProgressStore;
   private activeBookGetter: () => THREE.Group | null;
   private inspectBookHandler: (book: THREE.Group) => void;
 
@@ -48,148 +52,161 @@ export class UIManager {
     shelfMgr: ShelfManager,
     epubReader: EPUBReader,
     pdfReader: PDFReader,
-    bookData: BookData[],
+    auth: AuthManager,
+    vault: BookVault,
+    progress: ProgressStore,
     activeBookGetter: () => THREE.Group | null,
-    inspectBookHandler: (book: THREE.Group) => void
+    inspectBookHandler: (book: THREE.Group) => void,
   ) {
     this.shelfMgr = shelfMgr;
     this.epubReader = epubReader;
     this.pdfReader = pdfReader;
-    this.bookData = bookData;
+    this.auth = auth;
+    this.vault = vault;
+    this.progress = progress;
     this.activeBookGetter = activeBookGetter;
     this.inspectBookHandler = inspectBookHandler;
 
-    this.header = document.querySelector('.header') as HTMLElement;
-    this.statusInd = document.querySelector('.status-indicator') as HTMLElement;
-    this.footer = document.querySelector('.footer') as HTMLElement;
-    this.navLeft = document.querySelector('#nav-left') as HTMLButtonElement;
-    this.navRight = document.querySelector('#nav-right') as HTMLButtonElement;
-    this.inspectBtn = document.querySelector('#inspect-button') as HTMLButtonElement;
-
-    this.focusOverlay = document.querySelector('#focus-overlay') as HTMLElement;
-    this.focusIndex = document.querySelector('#focus-index') as HTMLElement;
-    this.focusTitle = document.querySelector('#focus-title') as HTMLElement;
-    this.focusAuthor = document.querySelector('#focus-author') as HTMLElement;
-
-    this.returnBtn = document.querySelector('#return-button') as HTMLButtonElement;
-    this.focusDetails = document.querySelector('#focus-details') as HTMLElement;
-    this.viewBookBtn = document.querySelector('.view-book-link') as HTMLButtonElement;
-
-    this.hoverTooltip = document.querySelector('#hover-tooltip') as HTMLElement;
-    this.scrubberThumb = document.querySelector('#scrubber-thumb') as HTMLElement;
-    this.scrubberTicks = document.querySelector('.scrubber-ticks') as HTMLElement;
-
-    this.searchInput = document.getElementById('search-input') as HTMLInputElement;
-    this.searchResults = document.getElementById('search-results') as HTMLElement;
-
-    this.unlockModal = document.getElementById('unlock-modal') as HTMLElement;
-    this.unlockInput = document.getElementById('unlock-password') as HTMLInputElement;
-    this.unlockSubmitBtn = document.getElementById('unlock-submit-btn') as HTMLButtonElement;
-    this.demoPreviewBtn = document.getElementById('demo-preview-btn') as HTMLButtonElement;
-    this.closeUnlockBtn = document.getElementById('close-unlock-btn') as HTMLButtonElement;
-    this.unlockError = document.getElementById('unlock-error') as HTMLElement;
-
-    this.initCounters();
+    this.cacheElements();
     this.initScrubber();
     this.initCategoryFilters();
     this.initSearch();
     this.initNavigation();
     this.initReadersTrigger();
+    this.initAuth();
+    this.refreshAuthUI();
   }
 
-  private initCounters(): void {
-    const bookCount = this.bookData.length;
-    const headerVolumeCount = document.getElementById('header-volume-count');
-    if (headerVolumeCount) headerVolumeCount.innerText = `${bookCount} VOLUMES`;
+  private cacheElements(): void {
+    const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
+    const $id = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-    const statusVolumeCount = document.getElementById('status-volume-count');
-    if (statusVolumeCount) statusVolumeCount.innerText = `${bookCount} VOLUMES READY`;
+    this.header = $('.header');
+    this.statusInd = $('.status-indicator');
+    this.footer = $('.footer');
+    this.navLeft = $('#nav-left');
+    this.navRight = $('#nav-right');
+    this.inspectBtn = $('#inspect-button');
+
+    this.focusOverlay = $('#focus-overlay');
+    this.focusIndex = $('#focus-index');
+    this.focusTitle = $('#focus-title');
+    this.focusAuthor = $('#focus-author');
+
+    this.returnBtn = $('#return-button');
+    this.focusDetails = $('#focus-details');
+    this.viewBookBtn = $('.view-book-link');
+    this.circleNote = $id('circle-progress');
+
+    this.hoverTooltip = $('#hover-tooltip');
+    this.scrubberThumb = $('#scrubber-thumb');
+    this.scrubberTicks = $('.scrubber-ticks');
+
+    this.searchInput = $id('search-input');
+    this.searchResults = $id('search-results');
+
+    this.authModal = $id('auth-modal');
+    this.emailInput = $id('auth-email');
+    this.passwordInput = $id('auth-password');
+    this.authError = $id('auth-error');
+    this.authStatus = $id('auth-status');
+  }
+
+  /** Called after the catalogue changes (sign in reveals the full library). */
+  public refreshCounts(): void {
+    const count = this.shelfMgr.entries.length;
+    const header = document.getElementById('header-volume-count');
+    if (header) header.innerText = `${count} VOLUMES`;
+    const status = document.getElementById('status-volume-count');
+    if (status) status.innerText = `${count} VOLUMES READY`;
+    this.initScrubber();
+    this.initCategoryFilters();
   }
 
   private initScrubber(): void {
-    const bookCount = this.bookData.length;
-    if (this.scrubberTicks) {
-      this.scrubberTicks.innerHTML = '';
-      for (let i = 0; i < bookCount; i++) {
-        const tick = document.createElement('div');
-        tick.className = 'scrubber-tick';
-        tick.style.left = `${(i / (bookCount - 1)) * 100}%`;
-        this.scrubberTicks.appendChild(tick);
-      }
+    const count = this.shelfMgr.entries.length;
+    if (!this.scrubberTicks) return;
+    this.scrubberTicks.innerHTML = '';
+    if (count < 2) return; // avoid dividing by zero on an empty or single shelf
+    for (let i = 0; i < count; i++) {
+      const tick = document.createElement('div');
+      tick.className = 'scrubber-tick';
+      tick.style.left = `${(i / (count - 1)) * 100}%`;
+      this.scrubberTicks.appendChild(tick);
     }
   }
 
   private initCategoryFilters(): void {
-    const categoryFiltersContainer = document.getElementById('category-filters')!;
-    const uniqueCategories = ['All', ...new Set(this.bookData.map(b => b.category || 'Uncategorized'))];
+    const container = document.getElementById('category-filters')!;
+    container.innerHTML = '';
+    const cats = ['All', ...new Set(this.shelfMgr.entries.map((b) => b.category || 'Uncategorized'))];
 
-    uniqueCategories.forEach(cat => {
-      if (!cat) return;
+    for (const cat of cats) {
       const btn = document.createElement('button');
       btn.className = 'category-btn';
-      btn.innerText = cat;
+      btn.textContent = cat;
       if (cat === 'All') btn.classList.add('active');
-      
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.category-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         this.shelfMgr.filterBooks(cat);
       });
-      
-      categoryFiltersContainer.appendChild(btn);
-    });
+      container.appendChild(btn);
+    }
   }
 
   private initSearch(): void {
-    const bookCount = this.bookData.length;
     this.searchInput.addEventListener('input', (e) => {
       const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
-      
-      if (query.length === 0) {
+      this.searchResults.innerHTML = '';
+
+      if (!query) {
         this.searchResults.classList.add('hidden');
         return;
       }
-      
-      this.searchResults.innerHTML = '';
-      let matchCount = 0;
-      
-      for (let i = 0; i < bookCount; i++) {
-        const data = this.bookData[i];
-        if (data.title.toLowerCase().includes(query) || data.author.toLowerCase().includes(query)) {
-          matchCount++;
-          const item = document.createElement('div');
-          item.className = 'search-result-item';
-          item.innerHTML = `
-            <div class="search-item-title">${data.title}</div>
-            <div class="search-item-author">${data.author}</div>
-          `;
-          
-          item.addEventListener('click', () => {
-            this.searchInput.value = '';
-            this.searchResults.classList.add('hidden');
-            
-            const book = this.shelfMgr.books[i];
-            const meta = this.shelfMgr.bookMetaMap.get(book)!;
-            this.shelfMgr.scrollTarget = meta.centerPosX;
-            
-            setTimeout(() => {
-              this.inspectBookHandler(book);
-            }, 800);
-          });
-          
-          this.searchResults.appendChild(item);
-        }
+
+      const entries = this.shelfMgr.entries;
+      let matches = 0;
+
+      for (let i = 0; i < entries.length; i++) {
+        const data = entries[i];
+        if (
+          !data.title.toLowerCase().includes(query) &&
+          !data.author.toLowerCase().includes(query)
+        ) continue;
+
+        matches++;
+        // textContent, not innerHTML: titles are user-supplied now.
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        const t = document.createElement('div');
+        t.className = 'search-item-title';
+        t.textContent = data.title;
+        const a = document.createElement('div');
+        a.className = 'search-item-author';
+        a.textContent = data.author;
+        item.append(t, a);
+
+        item.addEventListener('click', () => {
+          this.searchInput.value = '';
+          this.searchResults.classList.add('hidden');
+          const book = this.shelfMgr.books[i];
+          const meta = this.shelfMgr.bookMetaMap.get(book)!;
+          this.shelfMgr.scrollTarget = meta.centerPosX;
+          setTimeout(() => this.inspectBookHandler(book), 800);
+        });
+
+        this.searchResults.appendChild(item);
       }
-      
-      if (matchCount > 0) {
-        this.searchResults.classList.remove('hidden');
-      } else {
-        this.searchResults.classList.add('hidden');
-      }
+
+      this.searchResults.classList.toggle('hidden', matches === 0);
     });
 
     document.addEventListener('click', (e) => {
-      if (!this.searchInput.contains(e.target as Node) && !this.searchResults.contains(e.target as Node)) {
+      if (
+        !this.searchInput.contains(e.target as Node) &&
+        !this.searchResults.contains(e.target as Node)
+      ) {
         this.searchResults.classList.add('hidden');
       }
     });
@@ -203,100 +220,166 @@ export class UIManager {
       this.shelfMgr.scrollTarget = THREE.MathUtils.clamp(this.shelfMgr.scrollTarget + 0.5, 0, this.shelfMgr.maxScroll);
     });
     this.inspectBtn.addEventListener('click', () => {
-      const activeBook = this.activeBookGetter();
-      if (activeBook) this.inspectBookHandler(activeBook);
+      const active = this.activeBookGetter();
+      if (active) this.inspectBookHandler(active);
     });
   }
 
-  private initUnlockModal(): void {
-    const SECRET_CODE = 'tanya123';
-    
-    this.unlockSubmitBtn.addEventListener('click', () => {
-      if (this.unlockInput.value === SECRET_CODE) {
-        sessionStorage.setItem('library-unlocked', 'true');
-        this.unlockModal.classList.add('hidden');
-        if (this.pendingBookData) {
-          this.loadBook(this.pendingBookData);
-        }
+  // ------------------------------------------------------------------ auth --
+  private initAuth(): void {
+    document.getElementById('auth-signin-btn')?.addEventListener('click', async () => {
+      this.authError.classList.add('hidden');
+      this.authStatus.textContent = 'Signing in…';
+      const { error } = await this.auth.signInWithPassword(
+        this.emailInput.value.trim(),
+        this.passwordInput.value,
+      );
+      this.authStatus.textContent = '';
+      if (error) {
+        this.authError.textContent = error.message;
+        this.authError.classList.remove('hidden');
+        return;
+      }
+      this.passwordInput.value = '';
+      this.authModal.classList.add('hidden');
+      if (this.pendingBook) {
+        const book = this.pendingBook;
+        this.pendingBook = null;
+        await this.openBook(book);
+      }
+    });
+
+    document.getElementById('auth-magic-btn')?.addEventListener('click', async () => {
+      const email = this.emailInput.value.trim();
+      if (!email) {
+        this.authError.textContent = 'Enter your email first.';
+        this.authError.classList.remove('hidden');
+        return;
+      }
+      this.authError.classList.add('hidden');
+      const { error } = await this.auth.sendMagicLink(email);
+      this.authStatus.textContent = error ? '' : 'Check your email for a sign-in link.';
+      if (error) {
+        this.authError.textContent = error.message;
+        this.authError.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('auth-signout-btn')?.addEventListener('click', async () => {
+      await this.auth.signOut();
+      // A cached book must not outlive the session that earned it.
+      await this.vault.clearCache();
+    });
+
+    document.getElementById('close-auth-btn')?.addEventListener('click', () => {
+      this.authModal.classList.add('hidden');
+      this.pendingBook = null;
+    });
+
+    this.passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('auth-signin-btn')?.click();
+    });
+
+    this.auth.onChange(() => this.refreshAuthUI());
+  }
+
+  public refreshAuthUI(): void {
+    const signedIn = this.auth.isSignedIn;
+    const member = this.auth.isMember;
+
+    document.getElementById('auth-signin-trigger')?.classList.toggle('hidden', signedIn);
+    document.getElementById('auth-signout-btn')?.classList.toggle('hidden', !signedIn);
+    document.getElementById('open-upload-btn')?.classList.toggle('hidden', !member);
+
+    const who = document.getElementById('current-member');
+    if (who) who.textContent = member ? (this.auth.me?.display_name ?? '') : '';
+
+    // Signed in but not in the circle: say so plainly rather than failing later.
+    const notice = document.getElementById('member-notice');
+    if (notice) notice.classList.toggle('hidden', !signedIn || member);
+  }
+
+  private openAuthModal(): void {
+    this.authError.classList.add('hidden');
+    this.authStatus.textContent = '';
+    this.passwordInput.value = '';
+    this.authModal.classList.remove('hidden');
+    this.emailInput.focus();
+  }
+
+  // ------------------------------------------------------------- open book --
+  private async openBook(data: BookData): Promise<void> {
+    try {
+      if (data.format === 'pdf') {
+        this.pdfReader.load(data.id, await this.vault.urlFor(data.id));
+      } else if (data.format === 'epub') {
+        const blob = await this.vault.blobFor(data.id);
+        await this.epubReader.load(data.id, await blob.arrayBuffer());
       } else {
-        this.unlockError.classList.remove('hidden');
+        alert(
+          `${data.format.toUpperCase()} files are not readable in the browser yet. ` +
+          `This one is queued for conversion to EPUB.`,
+        );
       }
-    });
-
-    this.unlockInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        this.unlockSubmitBtn.click();
-      }
-    });
-
-    this.demoPreviewBtn.addEventListener('click', () => {
-      this.unlockModal.classList.add('hidden');
-      // Load the Gutenberg demo EPUB
-      this.epubReader.load('books/demo.epub');
-    });
-
-    this.closeUnlockBtn.addEventListener('click', () => {
-      this.unlockModal.classList.add('hidden');
-    });
-
-    // Close on click outside content
-    this.unlockModal.addEventListener('click', (e) => {
-      if (e.target === this.unlockModal) {
-        this.unlockModal.classList.add('hidden');
-      }
-    });
-  }
-
-  private loadBook(data: BookData): void {
-    if (data.epubUrl) {
-      this.epubReader.load(data.epubUrl);
-    } else if (data.pdfUrl) {
-      this.pdfReader.load(data.pdfUrl);
-    } else {
-      alert("This physical volume is currently not available for digital reading.");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Could not open this book.');
     }
   }
 
   private initReadersTrigger(): void {
-    this.viewBookBtn.addEventListener('click', () => {
-      const activeBook = this.activeBookGetter();
-      if (!activeBook) return;
-      
-      const meta = this.shelfMgr.bookMetaMap.get(activeBook)!;
-      const data = this.bookData[meta.index];
-      this.pendingBookData = data;
+    this.viewBookBtn.addEventListener('click', async () => {
+      const active = this.activeBookGetter();
+      if (!active) return;
 
-      const isUnlocked = sessionStorage.getItem('library-unlocked') === 'true';
-      if (isUnlocked) {
-        this.loadBook(data);
-      } else {
-        this.unlockError.classList.add('hidden');
-        this.unlockInput.value = '';
-        this.unlockModal.classList.remove('hidden');
-        this.unlockInput.focus();
+      const meta = this.shelfMgr.bookMetaMap.get(active)!;
+      const data = this.shelfMgr.entries[meta.index];
+
+      // The public-domain demo opens for anyone; everything else needs a seat.
+      if (data.is_public || this.auth.isMember) {
+        await this.openBook(data);
+        return;
       }
+      this.pendingBook = data;
+      this.openAuthModal();
     });
-    
-    this.initUnlockModal();
   }
 
-  public showInspectUI(title: string, author: string): void {
+  // ------------------------------------------------------------- inspect UI --
+  public async showInspectUI(data: BookData): Promise<void> {
     this.header.style.opacity = '0';
     this.statusInd.style.opacity = '0';
     this.footer.style.opacity = '0';
     this.navLeft.style.opacity = '0';
     this.navRight.style.opacity = '0';
-    
-    const categoryFiltersContainer = document.getElementById('category-filters')!;
-    categoryFiltersContainer.style.opacity = '0';
+    document.getElementById('category-filters')!.style.opacity = '0';
 
-    this.focusTitle.innerText = title;
-    this.focusAuthor.innerText = author;
-    
+    this.focusTitle.innerText = data.title;
+    this.focusAuthor.innerText = data.author;
+
     this.focusOverlay.classList.remove('hidden');
     this.focusDetails.classList.remove('hidden');
     this.returnBtn.classList.remove('hidden');
     this.inspectBtn.classList.add('hidden');
+
+    this.viewBookBtn.textContent =
+      data.is_public || this.auth.isMember ? 'READ' : 'SIGN IN TO READ';
+
+    await this.showCircleProgress(data);
+  }
+
+  /** "Where has my friend got to" — shown on the book detail panel. */
+  private async showCircleProgress(data: BookData): Promise<void> {
+    this.circleNote.textContent = '';
+    if (!this.auth.isMember) return;
+
+    const others = await this.progress.loadCircle(data.id);
+    if (others.length === 0) return;
+
+    const lines = others.map((p) => {
+      const who = this.auth.memberFor(p.user_id)?.display_name ?? 'Someone';
+      return `${who} is at ${Math.round(p.percentage * 100)}%`;
+    });
+    this.circleNote.textContent = lines.join(' · ');
   }
 
   public hideInspectUI(): void {
@@ -309,36 +392,40 @@ export class UIManager {
     this.footer.style.opacity = '1';
     this.navLeft.style.opacity = '1';
     this.navRight.style.opacity = '1';
-
-    const categoryFiltersContainer = document.getElementById('category-filters')!;
-    categoryFiltersContainer.style.opacity = '1';
+    document.getElementById('category-filters')!.style.opacity = '1';
   }
 
   public updateFocusUI(index: number): void {
+    const data = this.shelfMgr.entries[index];
+    if (!data) return;
     this.focusOverlay.classList.remove('hidden');
-    const data = this.bookData[index];
-    this.focusIndex.innerHTML = `
-      <span>${(index + 1).toString().padStart(2, '0')}</span>
-      <div class="focus-line"></div>
-      <span>${this.shelfMgr.books.length.toString().padStart(2, '0')}</span>
-    `;
+
+    this.focusIndex.innerHTML = '';
+    const cur = document.createElement('span');
+    cur.textContent = (index + 1).toString().padStart(2, '0');
+    const line = document.createElement('div');
+    line.className = 'focus-line';
+    const total = document.createElement('span');
+    total.textContent = this.shelfMgr.books.length.toString().padStart(2, '0');
+    this.focusIndex.append(cur, line, total);
+
     this.focusTitle.innerText = data.title;
     this.focusAuthor.innerText = data.author;
   }
 
   public updateScrubber(currentScroll: number, maxScroll: number): void {
-    const scrollPercent = currentScroll / maxScroll;
-    this.scrubberThumb.style.left = `${scrollPercent * 100}%`;
+    const pct = maxScroll > 0 ? currentScroll / maxScroll : 0;
+    this.scrubberThumb.style.left = `${pct * 100}%`;
   }
 
   public tooltip(title: string, author: string, x: number, y: number, show: boolean): void {
-    if (show) {
-      this.hoverTooltip.innerText = `${title} — ${author}`;
-      this.hoverTooltip.classList.add('visible');
-      this.hoverTooltip.style.left = `${x}px`;
-      this.hoverTooltip.style.top = `${y}px`;
-    } else {
+    if (!show) {
       this.hoverTooltip.classList.remove('visible');
+      return;
     }
+    this.hoverTooltip.innerText = `${title} — ${author}`;
+    this.hoverTooltip.classList.add('visible');
+    this.hoverTooltip.style.left = `${x}px`;
+    this.hoverTooltip.style.top = `${y}px`;
   }
 }

@@ -16,6 +16,12 @@
       
       <!-- UI Overlay -->
       <div id="ui-layer">
+        <div id="setup-notice" class="hidden">
+          Backend not configured — see <code>docs/SETUP.md</code>. The shelf renders, but no books will load.
+        </div>
+        <div id="member-notice" class="hidden">
+          You are signed in, but not yet a member of this reading circle.
+        </div>
         <!-- Header -->
         <header class="header">
           <div class="header-left">
@@ -31,6 +37,12 @@
             <div class="stats-text">
               <span id="header-volume-count">0 VOLUMES</span>
               <span>01 CONTINUOUS SHELF</span>
+            </div>
+            <div class="session-controls">
+              <span id="current-member"></span>
+              <button id="open-upload-btn" class="hidden">+ ADD BOOK</button>
+              <button id="auth-signin-trigger">SIGN IN</button>
+              <button id="auth-signout-btn" class="hidden">SIGN OUT</button>
             </div>
           </div>
         </header>
@@ -72,8 +84,10 @@
               VIEW BOOK
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
             </button>
+            <div id="circle-progress"></div>
             <div class="disclaimer-text">
-              *Demo Safeguard: Book files are currently rendered using mock placeholders to comply with distribution rights.
+              Private library. Book files are served only to signed-in members;
+              the demo volume is public domain.
             </div>
           </div>
     
@@ -143,7 +157,8 @@
     <div id="epub-overlay" class="hidden">
       <div class="epub-toolbar">
         <div class="toolbar-left">
-          <button id="close-epub-btn" class="close-reader-btn">
+          <button id="toggle-annotations-btn" title="Marks &amp; notes">NOTES</button>
+        <button id="close-epub-btn" class="close-reader-btn">
             <span>&times;</span>
             CLOSE
           </button>
@@ -200,21 +215,65 @@
       </div>
     </div>
     
-    <!-- Library Unlock Modal -->
-    <div id="unlock-modal" class="hidden">
+    <!-- Sign in to the reading circle -->
+    <div id="auth-modal" class="hidden">
       <div class="unlock-content">
-        <button id="close-unlock-btn">&times;</button>
-        <h3>Unlock Full Library</h3>
-        <p>This is a portfolio showcase. To read this copyrighted volume, please enter the access passcode. Guests can select "Demo Preview" to read a free public-domain book instead.</p>
-        <input type="password" id="unlock-password" placeholder="Enter passcode...">
-        <div id="unlock-error" class="hidden">Incorrect passcode. Please try again.</div>
+        <button id="close-auth-btn" aria-label="Close">&times;</button>
+        <h3>Sign in to read</h3>
+        <p>This library is shared between its two members. Anyone may browse the
+           shelf; reading requires an account. The demo volume is public domain
+           and opens for everyone.</p>
+        <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+        <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
+        <div id="auth-error" class="hidden"></div>
+        <div id="auth-status"></div>
         <div class="unlock-buttons">
-          <button id="demo-preview-btn">DEMO PREVIEW</button>
-          <button id="unlock-submit-btn">UNLOCK</button>
+          <button id="auth-magic-btn">EMAIL ME A LINK</button>
+          <button id="auth-signin-btn">SIGN IN</button>
         </div>
       </div>
     </div>
-    
+
+    <!-- Highlight / note popup, raised on text selection -->
+    <div id="annotation-popup" class="hidden">
+      <div class="annotation-colors"></div>
+      <button id="annotation-note-btn">Note</button>
+    </div>
+
+    <!-- Note composer -->
+    <div id="note-editor" class="hidden">
+      <textarea id="note-input" placeholder="Write a note..." rows="4"></textarea>
+      <div class="note-buttons">
+        <button id="note-cancel-btn">CANCEL</button>
+        <button id="note-save-btn">SAVE</button>
+      </div>
+    </div>
+
+    <!-- The shared margin -->
+    <aside id="annotation-sidebar" class="hidden">
+      <div class="annotation-header">
+        <h4>Marks &amp; Notes</h4>
+        <button id="close-annotations-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="annotation-list"></div>
+    </aside>
+
+    <!-- Add a book -->
+    <div id="upload-panel" class="hidden">
+      <div class="unlock-content">
+        <button id="close-upload-btn" aria-label="Close">&times;</button>
+        <h3>Add a book</h3>
+        <input type="file" id="upload-file" accept=".epub,.pdf,.mobi,.azw3,.cbz,.txt">
+        <input type="text" id="upload-title" placeholder="Title">
+        <input type="text" id="upload-author" placeholder="Author">
+        <input type="text" id="upload-category" placeholder="Category (e.g. Fantasy)">
+        <div id="upload-status"></div>
+        <div class="unlock-buttons">
+          <button id="upload-submit-btn">UPLOAD</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

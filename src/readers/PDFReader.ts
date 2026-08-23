@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import { HistoryStore } from '../utils/HistoryStore';
+import type { ProgressStore } from '../data/ProgressStore';
 
 // Configure pdfjs worker to use CDN to avoid Vite build issues
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -22,7 +22,8 @@ export class PDFReader {
   private pdfPrevBtn: HTMLButtonElement;
   private pdfNextBtn: HTMLButtonElement;
   
-  private activeBookTitleGetter: () => string;
+  private progress: ProgressStore;
+  private bookId: string | null = null;
 
   constructor(
     pdfOverlay: HTMLElement,
@@ -34,7 +35,7 @@ export class PDFReader {
     pdfProgressPercent: HTMLElement,
     pdfPrevBtn: HTMLButtonElement,
     pdfNextBtn: HTMLButtonElement,
-    activeBookTitleGetter: () => string
+    progress: ProgressStore
   ) {
     this.pdfOverlay = pdfOverlay;
     this.pdfPageWrapper = pdfPageWrapper;
@@ -47,17 +48,19 @@ export class PDFReader {
     this.pdfProgressPercent = pdfProgressPercent;
     this.pdfPrevBtn = pdfPrevBtn;
     this.pdfNextBtn = pdfNextBtn;
-    this.activeBookTitleGetter = activeBookTitleGetter;
+    this.progress = progress;
   }
 
-  public load(url: string): void {
+  /** @param url blob URL from BookVault, never a public path */
+  public load(bookId: string, url: string): void {
+    this.bookId = bookId;
     this.pdfOverlay.classList.remove('hidden');
     pdfjsLib.getDocument({ url }).promise.then((doc) => {
       this.pdfDoc = doc;
       this.pdfPageTotal.textContent = this.pdfDoc.numPages.toString().padStart(2, '0');
       
-      const title = this.activeBookTitleGetter();
-      this.pageNum = HistoryStore.getPdfPage(title);
+      const saved = this.progress.getLocal(bookId);
+      this.pageNum = saved?.location ? parseInt(saved.location, 10) || 1 : 1;
       
       if (this.pageNum < 1) this.pageNum = 1;
       if (this.pageNum > this.pdfDoc.numPages) this.pageNum = this.pdfDoc.numPages;
@@ -115,7 +118,9 @@ export class PDFReader {
     this.pdfPrevBtn.disabled = num <= 1;
     this.pdfNextBtn.disabled = num >= this.pdfDoc.numPages;
     
-    HistoryStore.setPdfPage(this.activeBookTitleGetter(), num);
+    if (this.bookId) {
+      this.progress.save(this.bookId, String(num), num / this.pdfDoc.numPages);
+    }
   }
 
   public queueRenderPage(num: number): void {
