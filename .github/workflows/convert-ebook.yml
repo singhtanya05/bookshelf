@@ -1,0 +1,61 @@
+name: Convert MOBI/AZW3 to EPUB
+
+# No browser renders MOBI or AZW3, so uploads in those formats are converted
+# here with Calibre and written back as EPUB. Trigger manually with the
+# catalogue id of the book to convert.
+#
+# NOTE: DRM-protected Kindle files cannot be converted and will fail here.
+# Only DRM-free files work.
+on:
+  workflow_dispatch:
+    inputs:
+      book_id:
+        description: 'Catalogue id (uuid) of the book to convert'
+        required: true
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Calibre
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends calibre
+
+      - name: Fetch source file
+        env:
+          VAULT_URL: ${{ secrets.VITE_VAULT_URL }}
+          SERVICE_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -fsSL -H "Authorization: Bearer $SERVICE_TOKEN" \
+            "$VAULT_URL/book/${{ inputs.book_id }}" -o source.bin
+          ls -lh source.bin
+
+      - name: Convert to EPUB
+        run: |
+          # Calibre sniffs the real format regardless of the extension.
+          ebook-convert source.bin output.epub
+          ls -lh output.epub
+
+      - name: Upload converted EPUB
+        env:
+          VAULT_URL: ${{ secrets.VITE_VAULT_URL }}
+          SERVICE_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $SERVICE_TOKEN" \
+            -H "Content-Type: application/epub+zip" \
+            --data-binary @output.epub \
+            "$VAULT_URL/book/${{ inputs.book_id }}"
+
+      - name: Mark as EPUB in the catalogue
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -fsS -X PATCH \
+            -H "apikey: $SERVICE_ROLE" \
+            -H "Authorization: Bearer $SERVICE_ROLE" \
+            -H "Content-Type: application/json" \
+            -d '{"format":"epub"}' \
+            "$SUPABASE_URL/rest/v1/books?id=eq.${{ inputs.book_id }}"

@@ -147,6 +147,18 @@ with (security_invoker = off) as
 revoke all on public_catalogue from anon, authenticated;
 grant select on public_catalogue to anon, authenticated;
 
+-- Public-domain books need their storage key resolvable without a session.
+-- Restricted to is_public rows, so this exposes only paths that are meant to
+-- be open anyway. Every other book's key stays members-only.
+create or replace view public_files
+with (security_invoker = off) as
+  select id, storage_key, format
+  from books
+  where is_public;
+
+revoke all on public_files from anon, authenticated;
+grant select on public_files to anon, authenticated;
+
 -- Realtime: friend's highlights and position appear live.
 alter publication supabase_realtime add table annotations;
 alter publication supabase_realtime add table reading_progress;

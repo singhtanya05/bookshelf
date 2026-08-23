@@ -64,16 +64,19 @@ async function resolveBook(
   return rows.length ? rows[0] : null;
 }
 
-/** The one public-domain book anyone may read, gated by is_public. */
+/**
+ * Public-domain books, readable without a session. The public_files view
+ * contains only is_public rows, so this cannot resolve a private book.
+ */
 async function resolvePublicBook(env: Env, bookId: string) {
   const url =
-    `${env.SUPABASE_URL}/rest/v1/public_catalogue` +
-    `?id=eq.${encodeURIComponent(bookId)}&is_public=is.true&select=id,format`;
+    `${env.SUPABASE_URL}/rest/v1/public_files` +
+    `?id=eq.${encodeURIComponent(bookId)}&select=storage_key`;
   const res = await fetch(url, {
     headers: { apikey: env.SUPABASE_ANON_KEY, Accept: 'application/json' },
   });
   if (!res.ok) return null;
-  const rows = (await res.json()) as Array<{ id: string; format: string }>;
+  const rows = (await res.json()) as Array<{ storage_key: string }>;
   return rows.length ? rows[0] : null;
 }
 
@@ -133,7 +136,7 @@ export default {
     if (!storageKey) {
       // Fall back to the public-domain demo, which needs no session.
       const pub = await resolvePublicBook(env, bookId);
-      if (pub) storageKey = `public/${pub.id}.${pub.format}`;
+      if (pub) storageKey = pub.storage_key;
     }
     if (!storageKey) {
       // Same answer for "no such book" and "not your book": a stranger

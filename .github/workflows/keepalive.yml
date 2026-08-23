@@ -1,0 +1,20 @@
+name: Keep Supabase awake
+
+# Supabase pauses free projects after ~7 days without activity. One cheap
+# read a week is enough to keep the library reachable.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Touch the public catalogue
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/public_catalogue?select=id&limit=1")
+          echo "catalogue responded $code"
+          test "$code" = "200"
