@@ -11,8 +11,15 @@ export interface Annotation {
   selected_text: string | null;
   note: string | null;
   color: string;
+  tagged_user_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** One annotation plus which book it belongs to — for the library-wide view. */
+export interface AnnotationWithBook extends Annotation {
+  book_title: string;
+  book_author: string;
 }
 
 /**
@@ -20,7 +27,10 @@ export interface Annotation {
  *
  * Everyone in the circle reads every annotation; RLS allows writes only to
  * your own. Realtime means a highlight your friend makes shows up in your
- * copy while you are both reading, without a refresh.
+ * copy while you are both reading, without a refresh. A tag is just another
+ * column on the same row — it lives in Postgres from the moment it's saved,
+ * the same as the note text itself, not as separate client-only state that
+ * could quietly go missing.
  */
 export class AnnotationStore {
   private byBook = new Map<string, Annotation[]>();
@@ -29,10 +39,9 @@ export class AnnotationStore {
 
   private userIdGetter: () => string | null;
 
-  constructor(
-    userIdGetter: () => string | null,
-  ) {
-    this.userIdGetter = userIdGetter;}
+  constructor(userIdGetter: () => string | null) {
+    this.userIdGetter = userIdGetter;
+  }
 
   onChange(fn: (bookId: string) => void): void {
     this.listeners.push(fn);
@@ -65,6 +74,23 @@ export class AnnotationStore {
     return this.byBook.get(bookId) ?? [];
   }
 
+  /** Every annotation across the whole library, newest first, book title included. */
+  async loadAll(): Promise<AnnotationWithBook[]> {
+    const supabase = db();
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+      .from('annotations_with_book')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('[annotations] loadAll failed:', error.message);
+      return [];
+    }
+    return (data ?? []) as AnnotationWithBook[];
+  }
+
   async add(input: {
     book_id: string;
     type: AnnotationType;
@@ -72,6 +98,7 @@ export class AnnotationStore {
     selected_text?: string;
     note?: string;
     color: string;
+    tagged_user_id?: string | null;
   }): Promise<Annotation | null> {
     const supabase = db();
     const userId = this.userIdGetter();
@@ -92,13 +119,12 @@ export class AnnotationStore {
     return row;
   }
 
-  async updateNote(id: string, note: string): Promise<void> {
+  async updateNote(id: string, note: string, taggedUserId?: string | null): Promise<void> {
     const supabase = db();
     if (!supabase) return;
-    await supabase
-      .from('annotations')
-      .update({ note, updated_at: new Date().toISOString() })
-      .eq('id', id);
+    const patch: Record<string, unknown> = { note, updated_at: new Date().toISOString() };
+    if (taggedUserId !== undefined) patch.tagged_user_id = taggedUserId;
+    await supabase.from('annotations').update(patch).eq('id', id);
   }
 
   async remove(id: string, bookId: string): Promise<void> {

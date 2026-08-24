@@ -291,6 +291,7 @@ export class UIManager {
     document.getElementById('auth-signin-trigger')?.classList.toggle('hidden', signedIn);
     document.getElementById('auth-signout-btn')?.classList.toggle('hidden', !signedIn);
     document.getElementById('open-upload-btn')?.classList.toggle('hidden', !member);
+    document.getElementById('open-notes-library-btn')?.classList.toggle('hidden', !member);
 
     const who = document.getElementById('current-member');
     if (who) who.textContent = member ? (this.auth.me?.display_name ?? '') : '';
@@ -306,6 +307,25 @@ export class UIManager {
     this.passwordInput.value = '';
     this.authModal.classList.remove('hidden');
     this.emailInput.focus();
+  }
+
+  /**
+   * Jump straight into a book from outside the 3D shelf — used by the
+   * library-wide notes panel, where a book may not even be on screen.
+   * Skips the shelf/inspect theatrics entirely; the reader overlay is
+   * already a fixed full-screen layer, so there's nothing it needs from
+   * the 3D scene to open.
+   */
+  public async openBookById(bookId: string, cfiRange?: string): Promise<void> {
+    const data = this.shelfMgr.entries.find((b) => b.id === bookId);
+    if (!data) {
+      alert('This book is no longer in the library.');
+      return;
+    }
+    await this.openBook(data);
+    if (cfiRange && data.format === 'epub') {
+      this.epubReader.displayAt(cfiRange);
+    }
   }
 
   // ------------------------------------------------------------- open book --

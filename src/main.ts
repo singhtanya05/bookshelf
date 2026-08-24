@@ -8,6 +8,7 @@ import { PDFReader } from './readers/PDFReader';
 import { InteractionManager } from './interaction/InteractionManager';
 import { UIManager } from './ui/UIManager';
 import { AnnotationUI } from './ui/AnnotationUI';
+import { NotesLibraryUI } from './ui/NotesLibraryUI';
 import { UploadPanel } from './ui/UploadPanel';
 import { AuthManager } from './auth/AuthManager';
 import { Catalogue } from './data/Catalogue';
@@ -97,6 +98,7 @@ async function bootstrap(): Promise<void> {
   uiMgr.refreshCounts();
 
   new AnnotationUI(annotations, auth, epubReader);
+  new NotesLibraryUI(annotations, auth, (bookId, cfiRange) => uiMgr.openBookById(bookId, cfiRange));
   const uploadPanel = new UploadPanel(auth, refreshCatalogue);
 
   async function refreshCatalogue(): Promise<void> {

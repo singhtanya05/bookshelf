@@ -17,9 +17,12 @@ export class AnnotationUI {
   private list: HTMLElement;
   private noteEditor: HTMLElement;
   private noteInput: HTMLTextAreaElement;
+  private noteQuote: HTMLElement;
+  private tagChips: HTMLElement;
 
   private pendingSelection: SelectionEvent | null = null;
   private editingId: string | null = null;
+  private selectedTagId: string | null = null;
 
   private annotations: AnnotationStore;
   private auth: AuthManager;
@@ -38,6 +41,8 @@ export class AnnotationUI {
     this.list = document.getElementById('annotation-list') as HTMLElement;
     this.noteEditor = document.getElementById('note-editor') as HTMLElement;
     this.noteInput = document.getElementById('note-input') as HTMLTextAreaElement;
+    this.noteQuote = document.getElementById('note-editor-quote') as HTMLElement;
+    this.tagChips = document.getElementById('note-tag-chips') as HTMLElement;
 
     this.buildPalette();
     this.wire();
@@ -68,7 +73,10 @@ export class AnnotationUI {
       if (!this.pendingSelection) return;
       this.hidePopup();
       this.editingId = null;
+      this.selectedTagId = null;
       this.noteInput.value = '';
+      this.showQuote(this.pendingSelection.text);
+      this.buildTagChips();
       this.noteEditor.classList.remove('hidden');
       this.noteInput.focus();
     });
@@ -78,6 +86,7 @@ export class AnnotationUI {
       this.noteEditor.classList.add('hidden');
       this.pendingSelection = null;
       this.editingId = null;
+      this.selectedTagId = null;
     });
 
     document.getElementById('toggle-annotations-btn')?.addEventListener('click', () => {
@@ -110,6 +119,36 @@ export class AnnotationUI {
     this.popup.classList.add('hidden');
   }
 
+  /** Shows the passage the note is attached to, so it's legible while writing. */
+  private showQuote(text: string | null | undefined): void {
+    if (!text) {
+      this.noteQuote.classList.add('hidden');
+      return;
+    }
+    this.noteQuote.textContent = text;
+    this.noteQuote.classList.remove('hidden');
+  }
+
+  /** One toggle chip per other member of the circle — tapping tags them on save. */
+  private buildTagChips(): void {
+    this.tagChips.innerHTML = '';
+    for (const member of this.auth.others) {
+      const chip = document.createElement('button');
+      chip.className = 'tag-chip';
+      chip.classList.toggle('active', this.selectedTagId === member.user_id);
+      chip.style.color = member.color;
+      const inner = document.createElement('span');
+      inner.className = 'tag-chip-inner';
+      inner.textContent = member.display_name;
+      chip.appendChild(inner);
+      chip.addEventListener('click', () => {
+        this.selectedTagId = this.selectedTagId === member.user_id ? null : member.user_id;
+        this.buildTagChips();
+      });
+      this.tagChips.appendChild(chip);
+    }
+  }
+
   private async commitHighlight(color: string): Promise<void> {
     const sel = this.pendingSelection;
     const bookId = this.epubReader.activeBookId;
@@ -136,7 +175,7 @@ export class AnnotationUI {
     if (!text || !bookId) return;
 
     if (this.editingId) {
-      await this.annotations.updateNote(this.editingId, text);
+      await this.annotations.updateNote(this.editingId, text, this.selectedTagId);
       await this.annotations.load(bookId);
     } else if (this.pendingSelection) {
       await this.annotations.add({
@@ -146,6 +185,7 @@ export class AnnotationUI {
         selected_text: this.pendingSelection.text,
         note: text,
         color: this.auth.me?.color ?? '#E88D56',
+        tagged_user_id: this.selectedTagId,
       });
       this.epubReader.clearSelection();
     }
@@ -153,6 +193,7 @@ export class AnnotationUI {
     this.noteEditor.classList.add('hidden');
     this.pendingSelection = null;
     this.editingId = null;
+    this.selectedTagId = null;
     this.epubReader.renderAnnotations();
     this.refreshList();
   }
@@ -165,7 +206,10 @@ export class AnnotationUI {
       return;
     }
     this.editingId = a.id;
+    this.selectedTagId = a.tagged_user_id;
     this.noteInput.value = a.note ?? '';
+    this.showQuote(a.selected_text);
+    this.buildTagChips();
     this.noteEditor.classList.remove('hidden');
     this.noteInput.focus();
   }
@@ -197,6 +241,15 @@ export class AnnotationUI {
       who.className = 'annotation-author';
       who.textContent = mine ? 'You' : (author?.display_name ?? 'Someone');
       row.appendChild(who);
+
+      if (a.tagged_user_id) {
+        const tagged = this.auth.memberFor(a.tagged_user_id);
+        const isMe = a.tagged_user_id === this.auth.userId;
+        const tag = document.createElement('span');
+        tag.className = 'notes-item-tag';
+        tag.textContent = `→ ${isMe ? 'you' : tagged?.display_name ?? 'someone'}`;
+        who.appendChild(tag);
+      }
 
       if (a.selected_text) {
         const quote = document.createElement('blockquote');

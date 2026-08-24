@@ -85,6 +85,12 @@ export class AuthManager {
     return this.membersById.get(userId) ?? null;
   }
 
+  /** Everyone in the circle except the signed-in user — who there is to tag. */
+  get others(): Member[] {
+    const mine = this.userId;
+    return [...this.membersById.values()].filter((m) => m.user_id !== mine);
+  }
+
   async signInWithPassword(email: string, password: string) {
     const supabase = db();
     if (!supabase) throw new Error('Backend not configured');

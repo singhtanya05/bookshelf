@@ -40,6 +40,7 @@
             </div>
             <div class="session-controls">
               <span id="current-member"></span>
+              <button id="open-notes-library-btn" class="hidden">MY NOTES</button>
               <button id="open-upload-btn" class="hidden">+ ADD BOOK</button>
               <button id="auth-signin-trigger">SIGN IN</button>
               <button id="auth-signout-btn" class="hidden">SIGN OUT</button>
@@ -242,11 +243,27 @@
 
     <!-- Note composer -->
     <div id="note-editor" class="hidden">
+      <h4 id="note-editor-heading">Add a note</h4>
+      <blockquote id="note-editor-quote" class="hidden"></blockquote>
       <textarea id="note-input" placeholder="Write a note..." rows="4"></textarea>
+      <div id="note-tag-row">
+        <span class="note-tag-label">Tag:</span>
+        <div id="note-tag-chips"></div>
+      </div>
       <div class="note-buttons">
         <button id="note-cancel-btn">CANCEL</button>
         <button id="note-save-btn">SAVE</button>
       </div>
+    </div>
+
+    <!-- Library-wide notes, across every book -->
+    <div id="notes-library-panel" class="hidden">
+      <div class="notes-library-header">
+        <h3>Marks &amp; Notes — Whole Library</h3>
+        <button id="close-notes-library-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="notes-library-filters"></div>
+      <div id="notes-library-body"></div>
     </div>
 
     <!-- The shared margin -->
