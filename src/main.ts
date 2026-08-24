@@ -130,6 +130,26 @@ async function bootstrap(): Promise<void> {
   );
 
   // --- Reader chrome -------------------------------------------------------
+  // The "Aa" button reveals font size / font family — it had never been
+  // wired to anything in this project's history, so the panel could never
+  // actually open even though the controls inside it worked fine once shown.
+  const textSettingsBtn = document.getElementById('epub-text-settings-btn');
+  const textSettingsMenu = document.getElementById('text-settings-menu');
+  textSettingsBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    textSettingsMenu?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (
+      textSettingsMenu &&
+      !textSettingsMenu.classList.contains('hidden') &&
+      !textSettingsMenu.contains(e.target as Node) &&
+      e.target !== textSettingsBtn
+    ) {
+      textSettingsMenu.classList.add('hidden');
+    }
+  });
+
   document.getElementById('epub-layout-btn')?.addEventListener('click', () => epubReader.toggleSpread());
   document.getElementById('font-size-inc')?.addEventListener('click', () => epubReader.changeFontSize(10));
   document.getElementById('font-size-dec')?.addEventListener('click', () => epubReader.changeFontSize(-10));
