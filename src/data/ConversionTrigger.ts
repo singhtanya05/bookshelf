@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { db } from './supabase';
 
 export interface ConversionResult {
@@ -23,6 +24,18 @@ export async function triggerConversion(bookId: string): Promise<ConversionResul
   });
 
   if (error) {
+    // supabase-js's own error.message is a fixed generic string ("Edge
+    // Function returned a non-2xx status code") for every failure, no
+    // matter what the function actually said — the real reason is only in
+    // the raw response body, which the client doesn't parse automatically.
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = await error.context.json();
+        if (body?.error) return { ok: false, message: body.error };
+      } catch {
+        // Response wasn't JSON — fall through to the generic message below.
+      }
+    }
     return { ok: false, message: error.message ?? 'Could not reach the conversion service.' };
   }
 
