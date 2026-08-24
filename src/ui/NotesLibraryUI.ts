@@ -1,5 +1,6 @@
 import type { AnnotationStore, AnnotationWithBook } from '../data/AnnotationStore';
 import type { AuthManager } from '../auth/AuthManager';
+import { formatQuote } from './AnnotationUI';
 
 type FilterId = 'all' | 'mine' | 'tagged' | string;
 
@@ -168,13 +169,23 @@ export class NotesLibraryUI {
     row.appendChild(meta);
 
     if (a.selected_text) {
+      const quoteLabel = document.createElement('div');
+      quoteLabel.className = 'notes-item-label';
+      quoteLabel.textContent = 'HIGHLIGHTED';
+      row.appendChild(quoteLabel);
+
       const quote = document.createElement('p');
       quote.className = 'notes-item-quote';
-      quote.textContent = `"${a.selected_text}"`;
+      quote.textContent = formatQuote(a.selected_text);
       row.appendChild(quote);
     }
 
     if (a.note) {
+      const noteLabel = document.createElement('div');
+      noteLabel.className = 'notes-item-label';
+      noteLabel.textContent = 'NOTE';
+      row.appendChild(noteLabel);
+
       const note = document.createElement('p');
       note.className = 'notes-item-note';
       note.textContent = a.note;

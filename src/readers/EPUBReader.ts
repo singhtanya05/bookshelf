@@ -105,6 +105,12 @@ export class EPUBReader {
     this.applyTheme(ReaderSettings.getTheme());
     this.currentRendition.themes.font(this.epubFontFamily);
     this.currentRendition.themes.fontSize(`${this.epubFontSize}%`);
+    this.applyFontOverride();
+
+    // The "continuous" manager renders adjacent sections into their own
+    // iframes as you turn pages — each one is a fresh document that never
+    // saw our font override. Re-apply it every time a new one appears.
+    this.currentRendition.on('rendered', () => this.applyFontOverride());
 
     // Resume: prefer an explicit target, else whichever saved position is newer.
     let targetCfi = startCfi;
@@ -291,6 +297,44 @@ export class EPUBReader {
     this.epubFontFamily = family;
     ReaderSettings.setFontFamily(family);
     this.currentRendition?.themes.font(family);
+    this.applyFontOverride();
+  }
+
+  /**
+   * epub.js's own themes.font() only sets an inline font-family on <body>
+   * and leans on CSS inheritance — fine for a plain Gutenberg text file,
+   * but any book with its own typesetting CSS (a real p/span/h1 rule, even
+   * without !important) wins over an inherited value regardless of how the
+   * ancestor's style was set. Confirmed directly: computed font-family
+   * updated correctly for Alice in Wonderland, but real published EPUBs
+   * commonly define font-family on the elements themselves.
+   *
+   * This takes the same approach as the theme-color fix: stop trusting
+   * inheritance and write our own !important rule directly onto the
+   * elements that actually carry text, in every currently-rendered iframe.
+   */
+  private applyFontOverride(): void {
+    if (!this.currentRendition) return;
+    const family = this.epubFontFamily;
+    const css =
+      `body, p, span, div, li, dd, dt, blockquote, a, em, i, strong, b, ` +
+      `small, sub, sup, td, th, caption, label, h1, h2, h3, h4, h5, h6 ` +
+      `{ font-family: ${family} !important; }`;
+
+    for (const contents of this.currentRendition.getContents() as any[]) {
+      const doc: Document | undefined = contents?.document;
+      if (!doc) continue;
+
+      // Updating an existing tag's content in place does NOT move it in the
+      // DOM — if the book's own stylesheet ever loads or re-injects after
+      // ours, it wins the position tie despite our content being current.
+      // Removing and re-appending guarantees we're always last, every call.
+      doc.getElementById('shelf-font-override')?.remove();
+      const tag = doc.createElement('style');
+      tag.id = 'shelf-font-override';
+      tag.textContent = css;
+      doc.head.appendChild(tag);
+    }
   }
 
   public displayAt(cfi: string): void {

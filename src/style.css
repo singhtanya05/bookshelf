@@ -1956,3 +1956,18 @@ body.dark-theme #demo-preview-btn {
   #notes-library-panel { padding: 20px; }
   .notes-library-header h3 { font-size: 20px; }
 }
+
+/* Quote / note distinction labels, shared by both the per-book sidebar and
+   the library-wide notes panel. */
+.annotation-label, .notes-item-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin: 6px 0 3px;
+  color: var(--theme-text, #2A2A28);
+}
+.annotation-label:first-of-type, .notes-item-label:first-of-type {
+  margin-top: 0;
+}

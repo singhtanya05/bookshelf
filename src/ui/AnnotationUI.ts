@@ -5,6 +5,17 @@ import type { EPUBReader, SelectionEvent } from '../readers/EPUBReader';
 const HIGHLIGHT_COLORS = ['#FFD54F', '#A5D6A7', '#90CAF9', '#F48FB1', '#CE93D8'];
 
 /**
+ * A manually-dragged selection routinely starts or ends mid-word — that's
+ * just how the browser's Range API works, not a bug. Softening it with an
+ * ellipsis makes it read as a deliberate excerpt instead of looking broken.
+ */
+export function formatQuote(text: string): string {
+  const startsMidWord = /^[a-z]/.test(text);
+  const endsMidWord = /[a-zA-Z]$/.test(text) && !/[.!?]$/.test(text);
+  return `${startsMidWord ? '…' : ''}${text}${endsMidWord ? '…' : ''}`;
+}
+
+/**
  * Highlights, notes, and the shared margin.
  *
  * Everything rendered here can contain another person's text, so every value
@@ -252,13 +263,23 @@ export class AnnotationUI {
       }
 
       if (a.selected_text) {
+        const quoteLabel = document.createElement('div');
+        quoteLabel.className = 'annotation-label';
+        quoteLabel.textContent = 'HIGHLIGHTED';
+        row.appendChild(quoteLabel);
+
         const quote = document.createElement('blockquote');
         quote.className = 'annotation-quote';
-        quote.textContent = a.selected_text;
+        quote.textContent = formatQuote(a.selected_text);
         row.appendChild(quote);
       }
 
       if (a.note) {
+        const noteLabel = document.createElement('div');
+        noteLabel.className = 'annotation-label';
+        noteLabel.textContent = 'NOTE';
+        row.appendChild(noteLabel);
+
         const note = document.createElement('p');
         note.className = 'annotation-note';
         note.textContent = a.note;
