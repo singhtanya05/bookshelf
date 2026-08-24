@@ -1,6 +1,7 @@
 import type { AnnotationStore, Annotation } from '../data/AnnotationStore';
 import type { AuthManager } from '../auth/AuthManager';
 import type { EPUBReader, SelectionEvent } from '../readers/EPUBReader';
+import type { PDFReader, PdfSelectionEvent } from '../readers/PDFReader';
 
 const HIGHLIGHT_COLORS = ['#FFD54F', '#A5D6A7', '#90CAF9', '#F48FB1', '#CE93D8'];
 
@@ -16,11 +17,17 @@ export function formatQuote(text: string): string {
 }
 
 /**
- * Highlights, notes, and the shared margin.
+ * Highlights, notes, and the shared margin — works over either reader.
  *
- * Everything rendered here can contain another person's text, so every value
- * goes in via textContent. No innerHTML with data — that was the one real
- * injection route once uploads and shared annotations exist.
+ * Only one reader is ever open at a time, so "the active reader" is simply
+ * whichever of the two currently reports a book id. EPUB hands back a real
+ * CFI the instant text is selected; a PDF has no such thing, so its
+ * cfiRange is resolved lazily from PDFReader.encodePendingSelection() only
+ * at the moment a highlight or note is actually committed.
+ *
+ * Everything rendered here can contain another person's text, so every
+ * value goes in via textContent. No innerHTML with data — that was the one
+ * real injection route once uploads and shared annotations exist.
  */
 export class AnnotationUI {
   private popup: HTMLElement;
@@ -31,22 +38,25 @@ export class AnnotationUI {
   private noteQuote: HTMLElement;
   private tagChips: HTMLElement;
 
-  private pendingSelection: SelectionEvent | null = null;
+  private pendingSelection: SelectionEvent | PdfSelectionEvent | null = null;
   private editingId: string | null = null;
   private selectedTagId: string | null = null;
 
   private annotations: AnnotationStore;
   private auth: AuthManager;
   private epubReader: EPUBReader;
+  private pdfReader: PDFReader;
 
   constructor(
     annotations: AnnotationStore,
     auth: AuthManager,
     epubReader: EPUBReader,
+    pdfReader: PDFReader,
   ) {
     this.annotations = annotations;
     this.auth = auth;
     this.epubReader = epubReader;
+    this.pdfReader = pdfReader;
     this.popup = document.getElementById('annotation-popup') as HTMLElement;
     this.sidebar = document.getElementById('annotation-sidebar') as HTMLElement;
     this.list = document.getElementById('annotation-list') as HTMLElement;
@@ -60,10 +70,23 @@ export class AnnotationUI {
 
     this.epubReader.onSelection = (sel) => this.showPopup(sel);
     this.epubReader.onAnnotationClick = (a) => this.openNote(a);
+    this.pdfReader.onSelection = (sel) => this.showPopup(sel);
+    this.pdfReader.onAnnotationClick = (a) => this.openNote(a);
+
     this.annotations.onChange(() => {
       this.epubReader.renderAnnotations();
+      this.pdfReader.renderAnnotations();
       this.refreshList();
     });
+  }
+
+  /** Whichever reader is actually open right now — only one ever is. */
+  private activeReader(): EPUBReader | PDFReader {
+    return this.epubReader.activeBookId ? this.epubReader : this.pdfReader;
+  }
+
+  private activeBookId(): string | null {
+    return this.epubReader.activeBookId ?? this.pdfReader.activeBookId;
   }
 
   private buildPalette(): void {
@@ -100,10 +123,12 @@ export class AnnotationUI {
       this.selectedTagId = null;
     });
 
-    document.getElementById('toggle-annotations-btn')?.addEventListener('click', () => {
+    const openSidebar = () => {
       this.sidebar.classList.toggle('hidden');
       if (!this.sidebar.classList.contains('hidden')) this.refreshList();
-    });
+    };
+    document.getElementById('toggle-annotations-btn')?.addEventListener('click', openSidebar);
+    document.getElementById('toggle-pdf-annotations-btn')?.addEventListener('click', openSidebar);
     document.getElementById('close-annotations-btn')?.addEventListener('click', () => {
       this.sidebar.classList.add('hidden');
     });
@@ -114,7 +139,7 @@ export class AnnotationUI {
     });
   }
 
-  private showPopup(sel: SelectionEvent): void {
+  private showPopup(sel: SelectionEvent | PdfSelectionEvent): void {
     if (!this.auth.isMember) return; // no marginalia without a seat at the table
     this.pendingSelection = sel;
 
@@ -160,52 +185,76 @@ export class AnnotationUI {
     }
   }
 
+  /**
+   * EPUB hands back a real CFI immediately on selection. A PDF has nothing
+   * equivalent — its location has to be measured from the live DOM Range at
+   * the moment of commit, since the selection itself doesn't survive the
+   * colour-picker popup being clicked.
+   */
+  private resolveLocation(): { cfiRange: string; text: string } | null {
+    const reader = this.activeReader();
+    if (reader === this.pdfReader) return this.pdfReader.encodePendingSelection();
+    if (!this.pendingSelection) return null;
+    return { cfiRange: this.pendingSelection.cfiRange, text: this.pendingSelection.text };
+  }
+
+  private clearActiveSelection(): void {
+    this.activeReader().clearSelection();
+  }
+
+  private renderActiveAnnotations(): void {
+    this.epubReader.renderAnnotations();
+    this.pdfReader.renderAnnotations();
+  }
+
   private async commitHighlight(color: string): Promise<void> {
-    const sel = this.pendingSelection;
-    const bookId = this.epubReader.activeBookId;
-    if (!sel || !bookId) return;
+    const bookId = this.activeBookId();
+    const loc = this.resolveLocation();
+    if (!bookId || !loc) return;
 
     await this.annotations.add({
       book_id: bookId,
       type: 'highlight',
-      cfi_range: sel.cfiRange,
-      selected_text: sel.text,
+      cfi_range: loc.cfiRange,
+      selected_text: loc.text,
       color,
     });
 
     this.hidePopup();
-    this.epubReader.clearSelection();
+    this.clearActiveSelection();
     this.pendingSelection = null;
-    this.epubReader.renderAnnotations();
+    this.renderActiveAnnotations();
     this.refreshList();
   }
 
   private async saveNote(): Promise<void> {
     const text = this.noteInput.value.trim();
-    const bookId = this.epubReader.activeBookId;
+    const bookId = this.activeBookId();
     if (!text || !bookId) return;
 
     if (this.editingId) {
       await this.annotations.updateNote(this.editingId, text, this.selectedTagId);
       await this.annotations.load(bookId);
-    } else if (this.pendingSelection) {
+    } else {
+      const loc = this.resolveLocation();
+      if (!loc) return;
       await this.annotations.add({
         book_id: bookId,
         type: 'note',
-        cfi_range: this.pendingSelection.cfiRange,
-        selected_text: this.pendingSelection.text,
+        cfi_range: loc.cfiRange,
+        selected_text: loc.text,
         note: text,
         color: this.auth.me?.color ?? '#E88D56',
         tagged_user_id: this.selectedTagId,
       });
-      this.epubReader.clearSelection();
+      this.clearActiveSelection();
     }
 
     this.noteEditor.classList.add('hidden');
     this.pendingSelection = null;
     this.editingId = null;
     this.selectedTagId = null;
-    this.epubReader.renderAnnotations();
+    this.renderActiveAnnotations();
     this.refreshList();
   }
 
@@ -227,7 +276,7 @@ export class AnnotationUI {
 
   /** The shared margin: every mark from everyone, in reading order. */
   public refreshList(): void {
-    const bookId = this.epubReader.activeBookId;
+    const bookId = this.activeBookId();
     this.list.innerHTML = '';
     if (!bookId) return;
 
@@ -286,7 +335,7 @@ export class AnnotationUI {
         row.appendChild(note);
       }
 
-      row.addEventListener('click', () => this.epubReader.displayAt(a.cfi_range));
+      row.addEventListener('click', () => this.activeReader().displayAt(a.cfi_range));
 
       if (mine) {
         const del = document.createElement('button');
@@ -296,7 +345,7 @@ export class AnnotationUI {
         del.addEventListener('click', async (e) => {
           e.stopPropagation();
           await this.annotations.remove(a.id, bookId);
-          this.epubReader.renderAnnotations();
+          this.renderActiveAnnotations();
           this.refreshList();
         });
         row.appendChild(del);

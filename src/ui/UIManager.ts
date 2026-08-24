@@ -323,9 +323,9 @@ export class UIManager {
       return;
     }
     await this.openBook(data);
-    if (cfiRange && data.format === 'epub') {
-      this.epubReader.displayAt(cfiRange);
-    }
+    if (!cfiRange) return;
+    if (data.format === 'epub') this.epubReader.displayAt(cfiRange);
+    else if (data.format === 'pdf') this.pdfReader.displayAt(cfiRange);
   }
 
   // ------------------------------------------------------------- open book --

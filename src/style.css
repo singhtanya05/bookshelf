@@ -1971,3 +1971,40 @@ body.dark-theme #demo-preview-btn {
 .annotation-label:first-of-type, .notes-item-label:first-of-type {
   margin-top: 0;
 }
+
+/* ===========================================================================
+   PDF annotations
+   ========================================================================= */
+
+.pdf-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#toggle-pdf-annotations-btn {
+  background: none;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+#pdf-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.pdf-highlight-mark {
+  position: absolute;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  cursor: pointer;
+  pointer-events: auto;
+  border-radius: 1px;
+}

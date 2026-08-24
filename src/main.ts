@@ -100,6 +100,8 @@ async function bootstrap(): Promise<void> {
     document.getElementById('pdf-prev-btn') as HTMLButtonElement,
     document.getElementById('pdf-next-btn') as HTMLButtonElement,
     progress,
+    annotations,
+    auth,
   );
 
   // --- UI ------------------------------------------------------------------
@@ -115,7 +117,7 @@ async function bootstrap(): Promise<void> {
   );
   uiMgr.refreshCounts();
 
-  new AnnotationUI(annotations, auth, epubReader);
+  new AnnotationUI(annotations, auth, epubReader, pdfReader);
   new NotesLibraryUI(annotations, auth, (bookId, cfiRange) => uiMgr.openBookById(bookId, cfiRange));
   const uploadPanel = new UploadPanel(auth, refreshCatalogue);
 
