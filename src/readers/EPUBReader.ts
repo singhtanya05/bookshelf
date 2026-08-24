@@ -51,7 +51,25 @@ export class EPUBReader {
     this.epubSpread = ReaderSettings.getSpread();
     this.epubFontSize = ReaderSettings.getFontSize();
     this.epubFontFamily = ReaderSettings.getFontFamily();
+
+    // epub.js's own rendition.on('keydown', ...) only fires for keypresses
+    // that land inside the book's iframe. Right after clicking READ, focus
+    // is still on the outer page, so arrow keys never reach that listener
+    // at all — this is the fallback for exactly that case.
+    document.addEventListener('keydown', this.handleGlobalKeydown);
   }
+
+  private handleGlobalKeydown = (e: KeyboardEvent): void => {
+    if (!this.currentRendition || this.epubOverlay.classList.contains('hidden')) return;
+
+    // Don't hijack typing if focus somehow ended up in a real input.
+    const tag = (e.target as HTMLElement | null)?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    if (e.key === 'ArrowRight') this.animateTurn('next');
+    else if (e.key === 'ArrowLeft') this.animateTurn('prev');
+    else if (e.key === 'Escape') this.close();
+  };
 
   /**
    * @param bookId  catalogue id — the key for progress and annotations
