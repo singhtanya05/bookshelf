@@ -141,7 +141,12 @@ GitHub → Settings → Developer settings → Personal access tokens →
 Fine-grained tokens → **Generate new token**.
 
 - Repository access: **Only select repositories** → this repo
-- Permissions → **Actions: Read and write**. Nothing else.
+- Permissions → **Actions: Read and write**, and **Contents: Read-only**.
+  Both are required — `workflow_dispatch` needs Contents access to resolve
+  the workflow file on the branch, not just Actions access to run it.
+  Actions-only produces a 403 "Resource not accessible by personal access
+  token" at dispatch time, which only shows up in the Edge Function's logs,
+  not in the app.
 
 **Deploy the Edge Function:**
 
