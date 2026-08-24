@@ -159,15 +159,32 @@ export class PDFReader {
         });
         textLayer.render();
 
-        this.pageRendering = false;
         this.pdfPageWrapper.classList.remove('fade-out', 'fade-in');
-        this.renderAnnotations();
 
+        // A failure here (e.g. a stale DOM reference) must not stop the
+        // page-turn queue below from running — annotations are secondary
+        // to the page itself actually being navigable.
+        try {
+          this.renderAnnotations();
+        } catch (e) {
+          console.error('[pdf] renderAnnotations failed:', e);
+        }
+
+        this.pageRendering = false;
         if (this.pageNumPending !== null) {
-          this.renderPage(this.pageNumPending);
+          const next = this.pageNumPending;
           this.pageNumPending = null;
+          this.renderPage(next);
         }
       });
+    }).catch((e) => {
+      // Whatever failed, this must never leave pageRendering stuck true —
+      // that would silently jam every future prev/next click forever,
+      // since queueRenderPage() only calls renderPage() again once this
+      // flag is false.
+      console.error('[pdf] renderPage failed:', e);
+      this.pageRendering = false;
+      this.pdfPageWrapper.classList.remove('fade-out', 'fade-in');
     });
 
     this.pdfPageCurrent.textContent = num.toString().padStart(2, '0');

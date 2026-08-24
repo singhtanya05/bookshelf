@@ -2008,3 +2008,11 @@ body.dark-theme #demo-preview-btn {
   pointer-events: auto;
   border-radius: 1px;
 }
+
+/* The shelf needs body { user-select: none } so dragging it doesn't select
+   page text — but that same rule silently blocked selecting text inside a
+   PDF for annotation, since nothing ever carved out an exception for it.
+   Re-enable selection specifically where it's meant to work. */
+#pdf-text-layer, #pdf-text-layer * {
+  user-select: text;
+}
