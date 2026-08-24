@@ -61,9 +61,27 @@ async function bootstrap(): Promise<void> {
   let activeBook: THREE.Group | null = null;
   let focusedIndex = -1;
 
+  /**
+   * True during the normal 3D inspect flow, AND while a reader is open via
+   * UIManager.openBookById() — the notes panel's "jump straight into this
+   * book" path, which deliberately skips the 3D animation and so never
+   * touches isInspectMode itself. Without this, the shelf's per-frame
+   * update kept running the whole time you were reading a book opened that
+   * way: still scrolling, still hover-scaling books, and arrow-key page
+   * turns doubled as shelf-scroll input on the hidden shelf underneath —
+   * live state drifting behind an opaque overlay, ready to surprise you
+   * the moment you closed the reader.
+   */
+  function isReaderOpen(): boolean {
+    return !epubOverlayEl.classList.contains('hidden') || !pdfOverlayEl.classList.contains('hidden');
+  }
+
   // --- Readers -------------------------------------------------------------
+  const epubOverlayEl = document.getElementById('epub-overlay') as HTMLElement;
+  const pdfOverlayEl = document.getElementById('pdf-reader-overlay') as HTMLElement;
+
   const epubReader = new EPUBReader(
-    document.getElementById('epub-overlay') as HTMLElement,
+    epubOverlayEl,
     document.getElementById('epub-viewer') as HTMLElement,
     document.getElementById('epub-progress') as HTMLElement,
     progress,
@@ -72,7 +90,7 @@ async function bootstrap(): Promise<void> {
   );
 
   const pdfReader = new PDFReader(
-    document.getElementById('pdf-reader-overlay') as HTMLElement,
+    pdfOverlayEl,
     document.querySelector('.pdf-page-wrapper') as HTMLElement,
     document.getElementById('pdf-render-canvas') as HTMLCanvasElement,
     document.getElementById('pdf-text-layer') as HTMLElement,
@@ -120,7 +138,7 @@ async function bootstrap(): Promise<void> {
   const interactMgr = new InteractionManager(
     sceneMgr,
     shelfMgr,
-    () => isInspectMode,
+    () => isInspectMode || isReaderOpen(),
     inspectBook,
     (idx) => {
       if (focusedIndex !== idx) {
@@ -279,7 +297,7 @@ async function bootstrap(): Promise<void> {
   function animate(): void {
     requestAnimationFrame(animate);
 
-    if (!isInspectMode) {
+    if (!isInspectMode && !isReaderOpen()) {
       const { closestIndex, minDistance } = shelfMgr.update(interactMgr.hoveredBook);
       sceneMgr.dirLight.position.x = 3 + shelfMgr.currentScroll * 0.1;
       uiMgr.updateScrubber(shelfMgr.currentScroll, shelfMgr.maxScroll);
