@@ -80,7 +80,13 @@ Deno.serve(async (req) => {
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${GITHUB_PAT}`,
+        // GitHub's REST API expects the "token" scheme for personal access
+        // tokens (classic or fine-grained) — "Bearer" is for GitHub App and
+        // OAuth app tokens. Using the wrong scheme is accepted by some
+        // endpoints and rejected by others, which is exactly the
+        // unexplained 403 seen here across two different PATs with
+        // provably correct scopes: the token was never the problem.
+        Authorization: `token ${GITHUB_PAT}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
         'X-GitHub-Api-Version': '2022-11-28',
