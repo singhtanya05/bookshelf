@@ -226,15 +226,28 @@ export class EPUBReader {
 
     for (const [name, c] of Object.entries(palette)) {
       const head = c.heading ?? c.fg;
+      // epub.js keeps every registered theme's stylesheet live inside the
+      // iframe at once — select() only toggles a class on <body>, it never
+      // disables the sheets for the themes you're NOT on (confirmed:
+      // sheet.disabled stays false for all of them here). Since the old
+      // rules were bare `html`/`body`/`p` selectors, all three themes'
+      // !important backgrounds applied simultaneously and whichever one
+      // happened to be registered last in the DOM won every time — so
+      // switching themes looked like it did nothing, or only "worked" once.
+      // Scoping every selector under body.<name> makes the rules mutually
+      // exclusive by construction: at most one theme's body class is ever
+      // present, so at most one ruleset can ever match, regardless of how
+      // many stylesheets epub.js leaves enabled. :has() reaches <html> from
+      // there since CSS has no selector for "my own parent".
       this.currentRendition.themes.register(name, {
-        html: { 'background-color': `${c.bg} !important` },
-        body: { color: `${c.fg} !important`, 'background-color': `${c.bg} !important`, 'line-height': '1.8' },
-        p: { color: `${c.fg} !important`, 'margin-bottom': '1.5em' },
-        span: { color: `${c.fg} !important` },
-        div: { color: `${c.fg} !important` },
-        h1: { color: `${head} !important` },
-        h2: { color: `${head} !important` },
-        h3: { color: `${head} !important` },
+        [`html:has(body.${name})`]: { 'background-color': `${c.bg} !important` },
+        [`body.${name}`]: { color: `${c.fg} !important`, 'background-color': `${c.bg} !important`, 'line-height': '1.8' },
+        [`body.${name} p`]: { color: `${c.fg} !important`, 'margin-bottom': '1.5em' },
+        [`body.${name} span`]: { color: `${c.fg} !important` },
+        [`body.${name} div`]: { color: `${c.fg} !important` },
+        [`body.${name} h1`]: { color: `${head} !important` },
+        [`body.${name} h2`]: { color: `${head} !important` },
+        [`body.${name} h3`]: { color: `${head} !important` },
       });
     }
   }
